@@ -41,6 +41,12 @@
       <div class="grille">
         <label>Libellé de la ligne<input name="forfait_libelle" value="{{ valeurs.get('forfait_libelle', '') }}"></label>
         <label>Montant du forfait (CHF)<input name="forfait_nourriture" inputmode="decimal" value="{{ valeurs.get('forfait_nourriture', '') }}"></label>
+        <label>Prix affiché en page 1
+          <select name="affichage_prix">
+            <option value="total" {{ 'selected' if valeurs.get('affichage_prix', 'total') == 'total' }}>Forfait total</option>
+            <option value="par_personne" {{ 'selected' if valeurs.get('affichage_prix') == 'par_personne' }}>Prix par personne</option>
+          </select>
+        </label>
       </div>
       <p></p>
       <label>Menu proposé (texte affiché sur le devis, facultatif)<textarea name="menu_texte" rows="4">{{ valeurs.get('menu_texte', '') }}</textarea></label>

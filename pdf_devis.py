@@ -1,7 +1,7 @@
 """PDF du devis Malewa (3 pages A4), généré avec ReportLab : Python pur, léger, sans navigateur ni programme système."""  # description du fichier
 import io  # fichier en mémoire (le PDF n'est jamais écrit sur le disque du serveur)
 import os  # chemins des polices et du logo
-from decimal import Decimal  # montants exacts
+from decimal import Decimal, ROUND_HALF_UP  # montants exacts et arrondi au centime
 from xml.sax.saxutils import escape  # protège les textes saisis (&, <, >) dans les paragraphes
 from reportlab.lib import colors  # couleurs
 from reportlab.lib.enums import TA_RIGHT  # alignement à droite
@@ -88,8 +88,15 @@ def page_1(d):  # lettre d'introduction
         contenu.append(ListFlowable(puces, bulletType="bullet", start="•", leftIndent=5 * mm, bulletFontSize=10, bulletColor=INDIGO))  # liste à puces
         contenu.append(Spacer(1, 3 * mm))  # espace
     if d["forfait_nourriture"]:  # encadré du forfait mets et boissons
-        libelle = Paragraph("PRIX FORFAITAIRE METS ET BOISSONS, " + t(d["personnes"]) + " PERSONNES", style("l", fontName="Figtree", fontSize=8.6, leading=11, textColor=colors.white, charSpace=1.3))  # libellé
-        valeur = Paragraph("CHF " + chf(d["forfait_nourriture"]), style("v", fontName="FigtreeGras", fontSize=11.5, leading=15, textColor=colors.white, alignment=TA_RIGHT))  # montant discret, tout en blanc
+        if d.get("affichage_prix") == "par_personne" and d["personnes"]:  # option : prix par personne au lieu du total
+            par_tete = (d["forfait_nourriture"] / Decimal(str(d["personnes"]))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)  # forfait divisé par le nombre de personnes, au centime
+            titre_bandeau = "PRIX PAR PERSONNE, METS ET BOISSONS (" + t(d["personnes"]) + " PERSONNES)"  # libellé du bandeau
+            montant_bandeau = "CHF " + chf(par_tete) + " / pers."  # montant par personne
+        else:  # affichage habituel : le forfait total
+            titre_bandeau = "PRIX FORFAITAIRE METS ET BOISSONS, " + t(d["personnes"]) + " PERSONNES"  # libellé du bandeau
+            montant_bandeau = "CHF " + chf(d["forfait_nourriture"])  # montant total
+        libelle = Paragraph(titre_bandeau, style("l", fontName="Figtree", fontSize=8.6, leading=11, textColor=colors.white, charSpace=1.3))  # libellé
+        valeur = Paragraph(montant_bandeau, style("v", fontName="FigtreeGras", fontSize=11.5, leading=15, textColor=colors.white, alignment=TA_RIGHT))  # montant discret, tout en blanc
         encadre = Table([[libelle, valeur]], colWidths=[LARGEUR * 0.62, LARGEUR * 0.38])  # bandeau indigo
         encadre.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), INDIGO), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 6 * mm), ("RIGHTPADDING", (0, 0), (-1, -1), 6 * mm), ("TOPPADDING", (0, 0), (-1, -1), 3 * mm), ("BOTTOMPADDING", (0, 0), (-1, -1), 3 * mm)]))  # mise en forme
         contenu += [encadre, Spacer(1, 4 * mm)]  # ajoute le bandeau

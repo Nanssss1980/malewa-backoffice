@@ -329,7 +329,7 @@ def valeurs_initiales(demande, reglages):  # valeurs proposées à l'ouverture d
         "debarras": "350", "km": "", "vehicules": "1", "tarif_km": nombre_texte(reglages.get("tarif_km", 1.2)),
         "tva_on": "", "taux_tva": nombre_texte(reglages.get("taux_tva", 8.1)), "validite": reglages.get("validite_jours", 14),
         "p1": nombre_texte(reglages.get("pourcentage_acompte_1", 10)), "p2": nombre_texte(reglages.get("pourcentage_acompte_2", 60)),
-        "phrase_a": "on", "phrase_b": "on", "phrase_c": "on", "cgv": "", "libre": "",
+        "phrase_a": "on", "phrase_b": "on", "phrase_c": "on", "cgv": "", "libre": "", "affichage_prix": "total",
     }  # valeurs de départ
 
 
@@ -346,6 +346,8 @@ def lire_devis(form, demande):  # transforme le formulaire en devis + lignes, av
     resultat, erreurs = calcul.calculer(form)  # calcule lignes, totaux et acomptes
     civilite = form.get("civilite", "")  # civilité du client
     if civilite not in CIVILITES:  # valeur inattendue
+        abort(400)  # requête refusée
+    if form.get("affichage_prix", "total") not in ("total", "par_personne"):  # valeur inattendue
         abort(400)  # requête refusée
     titre = texte(form, "titre")  # titre du devis
     if not titre:  # obligatoire
@@ -429,7 +431,7 @@ def donnees_pdf(devis, reglages):  # rassemble tout ce dont le PDF a besoin, dé
         "date_evt": date_fr(demande.get("date_evenement")) + (", " + horaire if horaire else " (horaire à préciser)"), "lieu_evt": demande.get("lieu") or "à préciser",
         "client_lignes": [l for l in [(CIVILITES.get(saisie.get("civilite", ""), CIVILITES[""])[1] + " " if not client.get("entreprise") and CIVILITES.get(saisie.get("civilite", ""), CIVILITES[""])[1] else "") + nom_client(client), client.get("adresse"), adresse_ville, client.get("email"), client.get("telephone")] if l],
         "salutation": devis.get("formule_appel") or "Madame, Monsieur,", "phrases": [l for l in (devis.get("introduction_texte") or "").split("\n") if l.strip()],
-        "personnes": personnes, "forfait_nourriture": nourriture, "deplacement": deplacement, "menu_lignes": [l.strip() for l in (devis.get("menu_texte") or "").splitlines() if l.strip()],
+        "personnes": personnes, "affichage_prix": saisie.get("affichage_prix", "total"), "forfait_nourriture": nourriture, "deplacement": deplacement, "menu_lignes": [l.strip() for l in (devis.get("menu_texte") or "").splitlines() if l.strip()],
         "lignes": lignes, "soumis_tva": devis["soumis_tva"], "taux_tva": "%g" % Decimal(str(devis["taux_tva"])), "total_ht": Decimal(str(devis["total_ht"])), "montant_tva": Decimal(str(devis["montant_tva"])), "total": Decimal(str(devis["total_ttc"])),
         "validite": devis["validite_jours"], "a1": ec["a1"], "a2": ec["a2"], "a3": ec["a3"], "p1": ec["p1"], "p2": ec["p2"], "p3": ec["p3"], "p1_txt": "%g" % ec["p1"], "p2_txt": "%g" % ec["p2"], "p3_txt": "%g" % ec["p3"],
         "tarif_h": nombre_texte(saisie.get("tarif_h") or reglages.get("tarif_horaire", 35)), "tarif_hn": nombre_texte(saisie.get("tarif_hn") or reglages.get("tarif_horaire_nuit", 42)),
