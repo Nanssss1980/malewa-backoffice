@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block titre %}Malewa{% endblock %} · Malewa back-office</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if MODE_DEMO %}<div class="demo">Mode démo : données fictives, rien n'est enregistré durablement.</div>{% endif %}
+  {% if utilisateur %}
+  <header class="bar">
+    <a class="marque" href="{{ url_for('liste_demandes') }}">MALEWA</a>
+    <nav aria-label="Navigation principale"><a href="{{ url_for('liste_demandes') }}">Demandes</a></nav>
+    <div class="moi">
+      <span>{{ utilisateur.nom }} ({{ 'modification' if utilisateur.role == 'admin' else 'lecture seule' }})</span>
+      <form method="post" action="{{ url_for('deconnexion') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button type="submit">Déconnexion</button>
+      </form>
+    </div>
+  </header>
+  {% endif %}
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for categorie, message in messages %}<div class="message {{ categorie }}" role="status">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    {% block contenu %}{% endblock %}
+  </main>
+</body>
+</html>

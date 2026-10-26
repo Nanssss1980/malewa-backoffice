@@ -1,0 +1,63 @@
+/* Malewa back-office : feuille de style (couleurs du site : blanc, indigo, or) */
+@font-face { font-family: 'Bodoni Moda'; font-weight: 700; src: url('fonts/bodoni-moda-latin-700-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Bodoni Moda'; font-weight: 900; src: url('fonts/bodoni-moda-latin-900-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Figtree'; font-weight: 400; src: url('fonts/figtree-latin-400-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Figtree'; font-weight: 600; src: url('fonts/figtree-latin-600-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Figtree'; font-weight: 700; src: url('fonts/figtree-latin-700-normal.woff2') format('woff2'); font-display: swap; }
+:root { --indigo: #21184B; --gold: #C6A624; --gold-text: #7a6300; --ink: #1d1a33; --muted: #5b5778; --line: #e4e1ee; --tint: #F6F5FA; --ok: #1b5e3b; --ok-bg: #E9F4EE; --err: #8a1f11; --err-bg: #FDECEA; --warn-bg: #FFF4D6; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--tint); color: var(--ink); font-family: Figtree, Arial, sans-serif; font-size: 15px; line-height: 1.5; }
+a { color: var(--indigo); }
+h1, h2 { font-family: 'Bodoni Moda', serif; color: var(--indigo); margin: 0; line-height: 1.15; }
+h1 { font-size: 32px; }
+.bar { background: var(--indigo); color: #fff; padding: 14px 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; }
+.bar .marque { font-family: 'Bodoni Moda', serif; font-weight: 900; letter-spacing: .16em; font-size: 20px; color: #fff; text-decoration: none; }
+.bar nav { display: flex; gap: 24px; flex-grow: 1; font-weight: 600; }
+.bar nav a { color: #fff; text-decoration: none; border-bottom: 3px solid var(--gold); padding-bottom: 2px; }
+.bar .moi { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.bar button { background: transparent; color: #fff; border: 1px solid #ffffff88; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.page { max-width: 1160px; margin: 0 auto; padding: 28px 32px 56px; display: flex; flex-direction: column; gap: 22px; }
+.entete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.carte { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 24px; }
+.carte h2 { font-family: Figtree, Arial, sans-serif; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-text); margin-bottom: 14px; }
+.btn { display: inline-block; background: var(--indigo); color: #fff; font: 700 15px Figtree, Arial, sans-serif; padding: 11px 22px; border: 0; border-bottom: 4px solid var(--gold); border-radius: 6px; cursor: pointer; text-decoration: none; }
+.btn.secondaire { background: #fff; color: var(--indigo); border: 1px solid var(--indigo); }
+.pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #fff; border: 1px solid #cfcbe0; color: var(--muted); }
+.pill.nouvelle { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.pill.accepte, .pill.acompte_recu { background: var(--ok-bg); color: var(--ok); border-color: #b9dcc8; }
+.pill.refuse, .pill.annule { background: var(--err-bg); color: var(--err); border-color: #f0c1bb; }
+.pill.devis_envoye, .pill.en_discussion { background: var(--warn-bg); color: #6b5300; border-color: #ecd68a; }
+.filtres { display: flex; flex-wrap: wrap; gap: 8px; }
+.filtres a { text-decoration: none; padding: 6px 14px; border-radius: 999px; border: 1px solid #cfcbe0; background: #fff; font-weight: 600; font-size: 14px; }
+.filtres a.actif { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.tableau { width: 100%; border-collapse: collapse; }
+.tableau th { text-align: left; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 2px solid var(--line); }
+.tableau td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tableau tr:last-child td { border-bottom: 0; }
+.defile { overflow-x: auto; }
+.alerte { background: var(--warn-bg); border-left: 4px solid var(--gold); padding: 12px 16px; border-radius: 4px; }
+.message { padding: 12px 16px; border-radius: 6px; font-weight: 600; }
+.message.ok { background: var(--ok-bg); color: var(--ok); }
+.message.erreur { background: var(--err-bg); color: var(--err); }
+.grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; }
+.libelle { font-size: 13px; color: var(--muted); font-weight: 600; }
+.valeur { font-weight: 600; }
+.deux { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+.deux > .gauche { flex: 999 1 560px; min-width: 0; }
+.deux > .droite { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 600; min-width: 0; }
+input, select, textarea { font: inherit; color: var(--ink); width: 100%; padding: 10px 12px; border: 1px solid #b9b4d0; border-radius: 6px; background: #fff; }
+input:focus, select:focus, textarea:focus, .btn:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+input[type=checkbox] { width: 20px; height: 20px; padding: 0; }
+.case { flex-direction: row; align-items: center; gap: 10px; font-size: 15px; color: var(--ink); font-weight: 400; }
+.statuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.statuts form { margin: 0; }
+.statuts button { font: 600 14px Figtree, Arial, sans-serif; padding: 7px 14px; border-radius: 999px; border: 1px solid #cfcbe0; background: #fff; color: var(--muted); cursor: pointer; }
+.statuts button.courant { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.connexion .carte { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; text-align: center; }
+.connexion img { width: 96px; height: 96px; margin: 0 auto; }
+.connexion form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.demo { background: var(--warn-bg); text-align: center; font-size: 13px; padding: 6px; }
+@media (max-width: 640px) { .bar, .page { padding-left: 16px; padding-right: 16px; } h1 { font-size: 26px; } }
+.formulaire { display: flex; flex-direction: column; gap: 22px; }

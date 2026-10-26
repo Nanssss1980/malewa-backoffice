@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titre %}{{ demande.titre }}{% endblock %}
+{% block contenu %}
+{% set client = demande.clients %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('liste_demandes') }}">&larr; Toutes les demandes</a>
+    <h1>{{ demande.titre }}</h1>
+  </div>
+  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_demande', identifiant=demande.id) }}">Modifier</a>{% endif %}
+</div>
+
+<div class="statuts" role="group" aria-label="Statut de la demande">
+  {% for code, nom in statuts %}
+    {% if utilisateur.role == 'admin' %}
+      <form method="post" action="{{ url_for('changer_statut', identifiant=demande.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="statut" value="{{ code }}">
+        <button type="submit" class="{{ 'courant' if demande.statut == code }}" {{ 'aria-current=true' if demande.statut == code }}>{{ nom }}</button>
+      </form>
+    {% else %}
+      <span class="pill {{ 'nouvelle' if demande.statut == code }}">{{ nom }}</span>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if conflits %}
+<div class="alerte" role="alert">
+  <strong>Date déjà prise :</strong> {{ demande.date_evenement|date_fr }} est aussi réservée pour
+  {% for c in conflits %}<a href="{{ url_for('fiche_demande', identifiant=c.id) }}">{{ c.titre }}</a> ({{ LIBELLE_STATUT[c.statut] }}){{ ', ' if not loop.last }}{% endfor %}.
+</div>
+{% endif %}
+
+<div class="deux">
+  <section class="carte gauche">
+    <h2>L'événement</h2>
+    <div class="grille">
+      <div><div class="libelle">Type</div><div class="valeur">{{ types.get(demande.type_evenement, '') }}</div></div>
+      <div><div class="libelle">Date</div><div class="valeur">{{ demande.date_evenement|date_fr }}</div></div>
+      <div><div class="libelle">Horaire</div><div class="valeur">{{ demande.horaire or 'à préciser' }}</div></div>
+      <div><div class="libelle">Lieu</div><div class="valeur">{{ demande.lieu or 'à préciser' }}</div></div>
+      <div><div class="libelle">Invités</div><div class="valeur">{{ demande.adultes }} adultes, {{ demande.enfants }} enfants</div></div>
+      <div><div class="libelle">Budget indiqué (facultatif)</div><div class="valeur">{{ demande.budget_indique|chf }}</div></div>
+      <div><div class="libelle">Source</div><div class="valeur">{{ sources.get(demande.source, '') }}</div></div>
+      <div><div class="libelle">Reçue le</div><div class="valeur">{{ demande.recue_le|date_fr }}</div></div>
+    </div>
+    {% if demande.message_client %}<p class="libelle">Message du client</p><p class="alerte">{{ demande.message_client }}</p>{% endif %}
+    {% if demande.notes_internes %}<p class="libelle">Notes internes</p><p>{{ demande.notes_internes }}</p>{% endif %}
+  </section>
+
+  <div class="droite">
+    <section class="carte">
+      <h2>Le client</h2>
+      <div class="valeur">{{ client|nom_client }}</div>
+      {% if client.adresse %}<div>{{ client.adresse }}, {{ client.code_postal or '' }} {{ client.ville or '' }}</div>{% endif %}
+      <div>{{ client.email or 'E-mail non renseigné' }}{% if client.email_invalide %} <span class="pill refuse">e-mail à corriger</span>{% endif %}</div>
+      <div>{{ client.telephone or 'Téléphone non renseigné' }}</div>
+      {% if client.contact_prefere %}<div class="libelle">Contact préféré : {{ client.contact_prefere }}</div>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

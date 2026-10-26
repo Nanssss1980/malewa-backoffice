@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre_page }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <h1>{{ titre_page }}</h1>
+  <a href="{{ url_for('fiche_demande', identifiant=identifiant) if edition else url_for('liste_demandes') }}">Annuler</a>
+</div>
+{% if erreurs %}
+<div class="message erreur" role="alert">
+  <strong>À corriger :</strong>
+  <ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+<form method="post" class="formulaire">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+
+  <section class="carte">
+    <h2>L'événement</h2>
+    <div class="grille">
+      <label>Titre de la demande<input name="titre" value="{{ valeurs.get('titre', '') }}" placeholder="Mariage Dupont"></label>
+      <label>Type d'événement
+        <select name="type_evenement">{% for code, nom in types %}<option value="{{ code }}" {{ 'selected' if valeurs.get('type_evenement') == code }}>{{ nom }}</option>{% endfor %}</select>
+      </label>
+      <label>Date<input type="date" name="date_evenement" value="{{ valeurs.get('date_evenement', '') }}"></label>
+      <label>Horaire<input name="horaire" value="{{ valeurs.get('horaire', '') }}" placeholder="à préciser"></label>
+      <label>Lieu<input name="lieu" value="{{ valeurs.get('lieu', '') }}"></label>
+      <label>Adultes<input type="number" min="0" name="adultes" value="{{ valeurs.get('adultes', '') }}"></label>
+      <label>Enfants<input type="number" min="0" name="enfants" value="{{ valeurs.get('enfants', '') }}"></label>
+      <label>Budget indiqué par le client (facultatif, CHF)<input name="budget_indique" value="{{ valeurs.get('budget_indique', '') }}" inputmode="decimal"></label>
+      <label>Source de la demande
+        <select name="source">{% for code, nom in sources %}<option value="{{ code }}" {{ 'selected' if valeurs.get('source') == code }}>{{ nom }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    <p></p>
+    <label>Message du client<textarea name="message_client" rows="3">{{ valeurs.get('message_client', '') }}</textarea></label>
+    <p></p>
+    <label>Notes internes : végétariens, allergies, remarques (jamais imprimées sur le devis)<textarea name="notes_internes" rows="3">{{ valeurs.get('notes_internes', '') }}</textarea></label>
+  </section>
+
+  <section class="carte">
+    <h2>Le client</h2>
+    <div class="grille">
+      <label>Prénom<input name="client_prenom" value="{{ valeurs.get('client_prenom', '') }}"></label>
+      <label>Nom (obligatoire)<input name="client_nom" value="{{ valeurs.get('client_nom', '') }}" required></label>
+      <label>Entreprise (si client professionnel)<input name="client_entreprise" value="{{ valeurs.get('client_entreprise', '') }}"></label>
+      <label>E-mail<input type="email" name="client_email" value="{{ valeurs.get('client_email', '') }}"></label>
+      <label>Téléphone ou WhatsApp<input name="client_telephone" value="{{ valeurs.get('client_telephone', '') }}"></label>
+      <label>Contact préféré
+        <select name="client_contact_prefere">{% for code, nom in contacts %}<option value="{{ code }}" {{ 'selected' if (valeurs.get('client_contact_prefere') or '') == code }}>{{ nom }}</option>{% endfor %}</select>
+      </label>
+      <label>Adresse<input name="client_adresse" value="{{ valeurs.get('client_adresse', '') }}"></label>
+      <label>Code postal<input name="client_code_postal" value="{{ valeurs.get('client_code_postal', '') }}"></label>
+      <label>Ville<input name="client_ville" value="{{ valeurs.get('client_ville', '') }}"></label>
+    </div>
+    <p></p>
+    <label class="case"><input type="checkbox" name="client_email_invalide" {{ 'checked' if valeurs.get('client_email_invalide') in (True, 'on') }}>L'e-mail est invalide ou à corriger</label>
+    {% if not edition %}<p class="libelle">Si l'e-mail correspond à un client existant, la demande est rattachée à sa fiche.</p>{% endif %}
+  </section>
+
+  <div><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+{% endblock %}

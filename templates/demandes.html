@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Demandes{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <h1>Demandes</h1>
+  {% if utilisateur.role == 'admin' %}<a class="btn" href="{{ url_for('nouvelle_demande') }}">Nouvelle demande</a>{% endif %}
+</div>
+<nav class="filtres" aria-label="Filtrer par statut">
+  <a href="{{ url_for('liste_demandes') }}" class="{{ 'actif' if not statut }}">Toutes</a>
+  {% for code, nom in statuts %}<a href="{{ url_for('liste_demandes', statut=code) }}" class="{{ 'actif' if statut == code }}">{{ nom }}</a>{% endfor %}
+</nav>
+<div class="carte defile">
+  {% if demandes %}
+  <table class="tableau">
+    <thead><tr><th>Date</th><th>Demande</th><th>Client</th><th>Invités</th><th>Budget indiqué</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for d in demandes %}
+      <tr>
+        <td>{{ d.date_evenement|date_fr }}</td>
+        <td><a href="{{ url_for('fiche_demande', identifiant=d.id) }}"><strong>{{ d.titre }}</strong></a><br><span class="libelle">{{ types.get(d.type_evenement, '') }}</span>
+          {% if d.conflits %}<br><span class="pill refuse">Date déjà prise</span>{% endif %}</td>
+        <td>{{ d.clients|nom_client }}</td>
+        <td>{{ d.adultes }} + {{ d.enfants }} enf.</td>
+        <td>{{ d.budget_indique|chf }}</td>
+        <td><span class="pill {{ d.statut }}">{{ LIBELLE_STATUT[d.statut] }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Aucune demande pour ce filtre.</p>
+  {% endif %}
+</div>
+{% endblock %}
