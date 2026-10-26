@@ -10,6 +10,7 @@ Accès privé, sur invitation uniquement (3 comptes).
 - Demandes : liste filtrable, fiche, création, modification, changement de statut
 - Alerte « date déjà prise » (anti-doubles réservations)
 - Devis : formulaire avec calculs en direct, TVA en option, services au tarif horaire ou au forfait, échéancier, texte d'introduction à cocher, fiche et modification
+- PDF du devis en 3 pages (lettre, détail, paiement), téléchargeable depuis la fiche du devis
 - Mode démo avec données fictives
 
 ## Stack
@@ -26,6 +27,7 @@ Accès privé, sur invitation uniquement (3 comptes).
 | `donnees_supabase.py` | Échanges avec la base Supabase |
 | `donnees_demo.py` | Données fictives pour tester sans base |
 | `calcul.py` | Calculs du devis (lignes, TVA, acomptes), avec des Decimal pour des montants exacts |
+| `pdf_devis.py` | PDF du devis en 3 pages (ReportLab, sans programme système), polices dans `polices/` |
 | `phrases.py` | Phrases proposées pour la lettre du devis |
 | `templates/` | Pages HTML |
 | `static/` | Style, logo, polices (hébergées ici, aucun service externe) |
@@ -73,4 +75,4 @@ Plan gratuit : le service se met en veille après une période d'inactivité, et
 
 ## Suite prévue
 
-PDF du devis, acomptes, calendrier, dépenses et remboursements, tâches de préparation.
+acomptes, calendrier, dépenses et remboursements, tâches de préparation.

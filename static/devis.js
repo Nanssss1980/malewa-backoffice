@@ -47,6 +47,11 @@
     afficher('p3', String(arrondi(100 - nombre('p1') - nombre('p2')))); // pourcentage du solde
   }
 
+  var civilite = formulaire.elements['civilite']; // liste de civilité
+  if (civilite) { civilite.addEventListener('change', function () { // la formule d'appel suit la civilité
+    formulaire.elements['formule_appel'].value = civilite.options[civilite.selectedIndex].getAttribute('data-appel'); // ex. Chère Madame,
+  }); }
+
   formulaire.addEventListener('input', recalculer); // à chaque frappe
   formulaire.addEventListener('change', recalculer); // à chaque case cochée
   recalculer(); // premier affichage

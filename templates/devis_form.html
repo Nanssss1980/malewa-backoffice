@@ -26,7 +26,10 @@
       <h2>1. Le devis</h2>
       <div class="grille">
         <label>Titre du devis<input name="titre" value="{{ valeurs.get('titre', '') }}"></label>
-        <label>Formule d'appel<input name="formule_appel" value="{{ valeurs.get('formule_appel', '') }}"></label>
+        <label>Civilité du client
+          <select name="civilite">{% for code, nom in civilite_choix %}<option value="{{ code }}" data-appel="{{ civilites[code][0] }}" {{ 'selected' if (valeurs.get('civilite') or '') == code }}>{{ nom }}</option>{% endfor %}</select>
+        </label>
+        <label>Formule d'appel (suit la civilité, modifiable)<input name="formule_appel" value="{{ valeurs.get('formule_appel', '') }}"></label>
         <label>Adultes<input name="adultes" inputmode="numeric" value="{{ valeurs.get('adultes', '') }}"></label>
         <label>Enfants (comptés pour une demi-tête)<input name="enfants" inputmode="numeric" value="{{ valeurs.get('enfants', '') }}"></label>
       </div>

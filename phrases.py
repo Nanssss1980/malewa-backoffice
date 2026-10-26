@@ -5,7 +5,7 @@ def liste(demande, adultes, enfants, personnes):  # renvoie les phrases : (ident
     date = demande.get("date_evenement_fr") or "la date à confirmer"  # date lisible
     lieu = demande.get("lieu") or "le lieu à confirmer"  # lieu de l'événement
     return [
-        ("a", f"Votre événement aura lieu le {date} à {lieu}.", ""),
+        ("a", f"Votre événement aura lieu le {date} (lieu : {lieu}).", ""),
         ("b", f"Le nombre de convives sera de {adultes} adultes et {enfants} enfants. Conformément à nos conditions générales, les enfants sont comptés à raison d'une demi-tête : le devis est proposé pour {personnes} personnes.", ""),
         ("c", "Nous nous chargerons de l'élaboration, du dressage et du service sur plateau de l'apéritif et au buffet des mets choisis, le matériel de service étant fourni par nos soins.", ""),
         ("d", "Le dessert est fourni par vos soins.", ""),

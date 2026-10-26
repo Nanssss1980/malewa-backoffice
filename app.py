@@ -8,7 +8,9 @@ from functools import wraps  # conserve le nom des fonctions décorées
 from decimal import Decimal  # montants exacts
 import calcul  # calculs du devis (lignes, TVA, acomptes)
 import phrases  # phrases proposées pour la lettre du devis
-from flask import Flask, render_template, request, redirect, url_for, session, abort, flash  # outils Flask
+import pdf_devis  # fabrication du PDF du devis
+import re  # nettoyage du nom de fichier
+from flask import Flask, render_template, request, redirect, url_for, session, abort, flash, Response  # outils Flask
 
 MODE_DEMO = os.environ.get("DEMO_MODE") == "1"  # vrai pour tester avec des données fictives
 if MODE_DEMO:  # version de démonstration
@@ -39,6 +41,8 @@ LIBELLE_STATUT = dict(STATUTS)  # code vers libellé
 SOURCES = [("site", "Site web"), ("whatsapp", "WhatsApp"), ("telephone", "Téléphone"), ("email", "E-mail"), ("autre", "Autre")]  # origines possibles
 TYPES = [("mariage", "Mariage"), ("evenement_prive", "Événement privé"), ("evenement_entreprise", "Événement d'entreprise"), ("festival", "Festival"), ("autre", "Autre")]  # types d'événement
 CONTACTS = [("", "Non précisé"), ("email", "E-mail"), ("whatsapp", "WhatsApp"), ("telephone", "Téléphone")]  # canaux préférés
+CIVILITES = {"": ("Madame, Monsieur,", ""), "madame": ("Chère Madame,", "Madame"), "monsieur": ("Cher Monsieur,", "Monsieur"), "couple": ("Chère Madame, cher Monsieur,", "Madame et Monsieur")}  # civilité : formule d'appel, titre dans l'adresse
+CIVILITE_CHOIX = [("", "Non précisé"), ("madame", "Madame"), ("monsieur", "Monsieur"), ("couple", "Madame et Monsieur")]  # choix proposés dans le formulaire
 STATUTS_DEVIS = {"brouillon": "Brouillon", "envoye": "Envoyé", "accepte": "Accepté", "refuse": "Refusé", "remplace": "Remplacé"}  # statuts autorisés pour un devis
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]  # mois en français
 
@@ -317,7 +321,7 @@ def nombre_texte(valeur):  # 35.0 devient "35", 8.10 devient "8.1" (pour prérem
 
 def valeurs_initiales(demande, reglages):  # valeurs proposées à l'ouverture d'un nouveau devis
     return {
-        "titre": demande["titre"], "formule_appel": "Madame, Monsieur,", "adultes": demande["adultes"], "enfants": demande["enfants"],
+        "titre": demande["titre"], "civilite": "", "formule_appel": "Madame, Monsieur,", "adultes": demande["adultes"], "enfants": demande["enfants"],
         "forfait_libelle": "Forfait nourriture et boissons", "forfait_nourriture": "", "menu_texte": "",
         "tarif_h": nombre_texte(reglages.get("tarif_horaire", 35)), "tarif_hn": nombre_texte(reglages.get("tarif_horaire_nuit", 42)),
         "s1_libelle": "Service apéritif", "s1_pers": "", "s1_h": "", "s1_hn": "", "s1_forfait": "",
@@ -340,6 +344,9 @@ def phrases_du_devis(demande, valeurs):  # phrases proposées, avec les chiffres
 
 def lire_devis(form, demande):  # transforme le formulaire en devis + lignes, avec la liste des erreurs
     resultat, erreurs = calcul.calculer(form)  # calcule lignes, totaux et acomptes
+    civilite = form.get("civilite", "")  # civilité du client
+    if civilite not in CIVILITES:  # valeur inattendue
+        abort(400)  # requête refusée
     titre = texte(form, "titre")  # titre du devis
     if not titre:  # obligatoire
         erreurs.append("Le titre du devis est obligatoire.")  # message d'erreur
@@ -352,7 +359,7 @@ def lire_devis(form, demande):  # transforme le formulaire en devis + lignes, av
     if texte(form, "libre"):  # ligne libre
         choisies.append(texte(form, "libre"))  # ajoutée à la fin
     devis = {
-        "titre": titre or "", "formule_appel": texte(form, "formule_appel"), "adultes": adultes, "enfants": enfants,
+        "titre": titre or "", "formule_appel": texte(form, "formule_appel") or CIVILITES[civilite][0], "adultes": adultes, "enfants": enfants,
         "introduction_texte": "\n".join(choisies) or None, "menu_texte": texte(form, "menu_texte"),
         "soumis_tva": resultat["soumis_tva"], "taux_tva": resultat["taux_tva"], "validite_jours": validite,
         "pourcentage_acompte_1": resultat["p1"], "pourcentage_acompte_2": resultat["p2"], "cgv_jointes": form.get("cgv") == "on",
@@ -363,7 +370,7 @@ def lire_devis(form, demande):  # transforme le formulaire en devis + lignes, av
 
 
 def rendre_devis_form(demande, valeurs, erreurs, edition, identifiant=None, code=200):  # affiche le formulaire de devis
-    return render_template("devis_form.html", demande=demande, valeurs=valeurs, erreurs=erreurs, phrases=phrases_du_devis(demande, valeurs), edition=edition, identifiant=identifiant), code  # page
+    return render_template("devis_form.html", demande=demande, valeurs=valeurs, erreurs=erreurs, phrases=phrases_du_devis(demande, valeurs), civilites=CIVILITES, civilite_choix=CIVILITE_CHOIX, edition=edition, identifiant=identifiant), code  # page
 
 
 def demande_ou_404(identifiant):  # lit la demande ou affiche « introuvable »
@@ -393,10 +400,52 @@ def fiche_devis(identifiant):  # affiche le devis
     devis = db.devis(jeton(), identifiant)  # lecture
     if not devis:  # introuvable
         abort(404)  # page introuvable
-    totaux = {"a1": calcul.r2(Decimal(str(devis["total_ttc"])) * Decimal(str(devis["pourcentage_acompte_1"])) / 100), "a2": calcul.r2(Decimal(str(devis["total_ttc"])) * Decimal(str(devis["pourcentage_acompte_2"])) / 100)}  # acomptes
-    totaux["a3"] = Decimal(str(devis["total_ttc"])) - totaux["a1"] - totaux["a2"]  # solde : le reste exact
-    totaux["p3"] = 100 - Decimal(str(devis["pourcentage_acompte_1"])) - Decimal(str(devis["pourcentage_acompte_2"]))  # pourcentage du solde
+    totaux = echeances(devis)  # acomptes et solde
     return render_template("devis_fiche.html", devis=devis, demande=devis["demandes"], client=devis["demandes"]["clients"], totaux=totaux)  # affiche la page
+
+
+def echeances(devis):  # calcule les deux acomptes et le solde d'un devis enregistré (le solde est le reste exact)
+    total = Decimal(str(devis["total_ttc"]))  # total à payer
+    p1 = Decimal(str(devis["pourcentage_acompte_1"]))  # pourcentage du premier acompte
+    p2 = Decimal(str(devis["pourcentage_acompte_2"]))  # pourcentage du deuxième acompte
+    a1 = calcul.r2(total * p1 / 100)  # premier acompte
+    a2 = calcul.r2(total * p2 / 100)  # deuxième acompte
+    return {"a1": a1, "a2": a2, "a3": total - a1 - a2, "p1": p1, "p2": p2, "p3": 100 - p1 - p2}  # montants et pourcentages
+
+
+def donnees_pdf(devis, reglages):  # rassemble tout ce dont le PDF a besoin, déjà mis en forme
+    demande = devis["demandes"]  # la demande liée
+    client = demande["clients"]  # le client
+    saisie = devis.get("saisie") or {}  # saisie d'origine (tarifs utilisés)
+    ec = echeances(devis)  # acomptes et solde
+    personnes = calcul.propre(Decimal(devis["adultes"]) + Decimal(devis["enfants"]) / 2)  # un enfant = une demi-tête
+    horaire = demande.get("horaire")  # horaire éventuel
+    lignes = [{**ligne, "montant": Decimal(str(ligne["montant"])), "quantite": ligne.get("quantite"), "prix_unitaire": ligne.get("prix_unitaire")} for ligne in devis["lignes"]]  # montants en Decimal
+    nourriture = next((l["montant"] for l in lignes if l["categorie"] == "forfait" and not l["libelle"].lower().startswith("débarras")), None)  # forfait mets et boissons
+    deplacement = next((l for l in lignes if l["categorie"] == "kilometrique"), None)  # ligne de déplacement
+    adresse_ville = " ".join(filter(None, [client.get("code_postal"), client.get("ville")]))  # code postal et ville
+    return {
+        "numero": devis["numero"], "objet": devis["titre"], "ville_date": "Lausanne, le " + date_fr(devis["date_emission"]),
+        "date_evt": date_fr(demande.get("date_evenement")) + (", " + horaire if horaire else " (horaire à préciser)"), "lieu_evt": demande.get("lieu") or "à préciser",
+        "client_lignes": [l for l in [(CIVILITES.get(saisie.get("civilite", ""), CIVILITES[""])[1] + " " if not client.get("entreprise") and CIVILITES.get(saisie.get("civilite", ""), CIVILITES[""])[1] else "") + nom_client(client), client.get("adresse"), adresse_ville, client.get("email"), client.get("telephone")] if l],
+        "salutation": devis.get("formule_appel") or "Madame, Monsieur,", "phrases": [l for l in (devis.get("introduction_texte") or "").split("\n") if l.strip()],
+        "personnes": personnes, "forfait_nourriture": nourriture, "deplacement": deplacement, "menu_lignes": [l.strip() for l in (devis.get("menu_texte") or "").splitlines() if l.strip()],
+        "lignes": lignes, "soumis_tva": devis["soumis_tva"], "taux_tva": "%g" % Decimal(str(devis["taux_tva"])), "total_ht": Decimal(str(devis["total_ht"])), "montant_tva": Decimal(str(devis["montant_tva"])), "total": Decimal(str(devis["total_ttc"])),
+        "validite": devis["validite_jours"], "a1": ec["a1"], "a2": ec["a2"], "a3": ec["a3"], "p1": ec["p1"], "p2": ec["p2"], "p3": ec["p3"], "p1_txt": "%g" % ec["p1"], "p2_txt": "%g" % ec["p2"], "p3_txt": "%g" % ec["p3"],
+        "tarif_h": nombre_texte(saisie.get("tarif_h") or reglages.get("tarif_horaire", 35)), "tarif_hn": nombre_texte(saisie.get("tarif_hn") or reglages.get("tarif_horaire_nuit", 42)),
+        "reglages": reglages,
+    }  # dictionnaire complet pour pdf_devis.generer
+
+
+@app.route("/devis/<identifiant>/pdf")  # téléchargement du PDF
+@connexion_requise  # réservée aux personnes connectées
+def telecharger_pdf(identifiant):  # fabrique et envoie le PDF
+    devis = db.devis(jeton(), identifiant)  # lecture du devis
+    if not devis:  # introuvable
+        abort(404)  # page introuvable
+    contenu = pdf_devis.generer(donnees_pdf(devis, db.reglages(jeton())))  # PDF en mémoire
+    nom = re.sub(r"[^0-9A-Za-z-]", "", str(devis["numero"]))  # nom de fichier sûr
+    return Response(contenu, mimetype="application/pdf", headers={"Content-Disposition": f'attachment; filename="Devis-{nom}.pdf"'})  # envoi en téléchargement
 
 
 @app.route("/devis/<identifiant>/modifier", methods=["GET", "POST"])  # modification d'un devis
