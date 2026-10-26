@@ -1,5 +1,6 @@
 """Accès aux données Malewa via Supabase (connexion et tables demandes/clients)."""  # description du fichier
 import os  # lecture des variables d'environnement (clés jamais écrites dans le code)
+from decimal import Decimal  # montants exacts venant des calculs du devis
 from supabase import create_client  # fabrique de connexion Supabase
 
 ACTIFS = ("devis_envoye", "accepte", "acompte_recu")  # statuts qui bloquent une date (risque de double réservation)
@@ -86,3 +87,49 @@ class Donnees:  # regroupe tous les échanges avec la base
 
     def changer_statut(self, jeton, identifiant, statut):  # change l'étape d'une demande
         self._client(jeton).table("demandes").update({"statut": statut}).eq("id", identifiant).execute()  # écrit le nouveau statut
+
+    # ------------------------------------------------------------ devis
+    @staticmethod
+    def _json(dictionnaire):  # prépare un dictionnaire pour l'envoi à Supabase (Decimal devient nombre)
+        return {cle: (float(valeur) if isinstance(valeur, Decimal) else valeur) for cle, valeur in dictionnaire.items()}  # montants en nombres
+
+    def reglages(self, jeton):  # lit la fiche de réglages (une seule ligne, id = 1)
+        reponse = self._client(jeton).table("reglages").select("*").eq("id", 1).execute()  # lecture
+        return reponse.data[0] if reponse.data else {}  # dictionnaire vide si absent
+
+    def devis_de_demande(self, jeton, demande_id):  # liste des devis d'une demande, du plus récent au plus ancien
+        return self._client(jeton).table("devis").select("id, numero, version, statut, date_emission, total_ttc").eq("demande_id", demande_id).order("cree_le", desc=True).execute().data  # lecture
+
+    def devis(self, jeton, identifiant):  # un devis complet : lignes, demande et client
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        reponse = base.table("devis").select("*, demandes(id, titre, lieu, date_evenement, horaire, clients(*))").eq("id", identifiant).execute()  # devis + demande + client
+        if not reponse.data:  # introuvable
+            return None  # rien à afficher
+        devis = reponse.data[0]  # le devis
+        devis["lignes"] = base.table("devis_lignes").select("*").eq("devis_id", identifiant).order("ordre").execute().data  # lignes dans l'ordre
+        return devis  # devis complet
+
+    def prochain_numero(self, jeton):  # numéro automatique AAAA-NNN fourni par la base
+        return self._client(jeton).rpc("prochain_numero_devis").execute().data  # appel de la fonction SQL
+
+    @staticmethod
+    def _ecrire_lignes(base, devis_id, lignes):  # enregistre les lignes d'un devis
+        if lignes:  # rien à écrire si vide
+            base.table("devis_lignes").insert([Donnees._json({**ligne, "devis_id": devis_id, "ordre": ordre}) for ordre, ligne in enumerate(lignes, start=1)]).execute()  # insertion groupée
+
+    def creer_devis(self, jeton, demande_id, devis, lignes):  # crée le devis et ses lignes
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        donnees = self._json({**devis, "demande_id": demande_id, "numero": self.prochain_numero(jeton)})  # ajoute le numéro automatique
+        identifiant = base.table("devis").insert(donnees).execute().data[0]["id"]  # insère le devis
+        try:  # puis ses lignes
+            self._ecrire_lignes(base, identifiant, lignes)  # insertion des lignes
+        except Exception:  # échec : on retire le devis incomplet
+            base.table("devis").delete().eq("id", identifiant).execute()  # nettoyage
+            raise  # l'erreur remonte
+        return identifiant  # identifiant du devis
+
+    def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour le devis et remplace ses lignes
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        base.table("devis").update(self._json(devis)).eq("id", identifiant).execute()  # met à jour le devis
+        base.table("devis_lignes").delete().eq("devis_id", identifiant).execute()  # retire les anciennes lignes
+        self._ecrire_lignes(base, identifiant, lignes)  # écrit les nouvelles lignes

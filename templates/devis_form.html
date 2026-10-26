@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block titre %}{{ 'Modifier le devis' if edition else 'Nouveau devis' }}{% endblock %}
+{% block contenu %}
+{% set client = demande.clients %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('fiche_devis', identifiant=identifiant) if edition else url_for('fiche_demande', identifiant=demande.id) }}">&larr; Annuler</a>
+    <h1>{{ 'Modifier le devis' if edition else 'Nouveau devis' }}</h1>
+    <p class="libelle">{{ client|nom_client }} &middot; {{ demande.date_evenement|date_fr }}{% if demande.lieu %} &middot; {{ demande.lieu }}{% endif %}</p>
+  </div>
+</div>
+
+{% if erreurs %}
+<div class="message erreur" role="alert">
+  <strong>À corriger :</strong>
+  <ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" id="formulaire-devis" class="deux" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+
+  <div class="gauche formulaire">
+
+    <section class="carte">
+      <h2>1. Le devis</h2>
+      <div class="grille">
+        <label>Titre du devis<input name="titre" value="{{ valeurs.get('titre', '') }}"></label>
+        <label>Formule d'appel<input name="formule_appel" value="{{ valeurs.get('formule_appel', '') }}"></label>
+        <label>Adultes<input name="adultes" inputmode="numeric" value="{{ valeurs.get('adultes', '') }}"></label>
+        <label>Enfants (comptés pour une demi-tête)<input name="enfants" inputmode="numeric" value="{{ valeurs.get('enfants', '') }}"></label>
+      </div>
+      <p class="libelle">Le devis est calculé pour <strong data-sortie="personnes">0</strong> personnes.</p>
+    </section>
+
+    <section class="carte">
+      <h2>2. Nourriture et boissons (forfait)</h2>
+      <div class="grille">
+        <label>Libellé de la ligne<input name="forfait_libelle" value="{{ valeurs.get('forfait_libelle', '') }}"></label>
+        <label>Montant du forfait (CHF)<input name="forfait_nourriture" inputmode="decimal" value="{{ valeurs.get('forfait_nourriture', '') }}"></label>
+      </div>
+      <p></p>
+      <label>Menu proposé (texte affiché sur le devis, facultatif)<textarea name="menu_texte" rows="4">{{ valeurs.get('menu_texte', '') }}</textarea></label>
+    </section>
+
+    <section class="carte">
+      <h2>3. Services au tarif horaire</h2>
+      <p class="libelle">Calcul : personnes &times; heures &times; tarif. Un forfait proposé remplace le calcul.</p>
+      <div class="grille">
+        <label>Tarif horaire (CHF)<input name="tarif_h" inputmode="decimal" value="{{ valeurs.get('tarif_h', '') }}"></label>
+        <label>Tarif après 22 h (CHF)<input name="tarif_hn" inputmode="decimal" value="{{ valeurs.get('tarif_hn', '') }}"></label>
+      </div>
+      {% for cle in ['s1', 's2'] %}
+      <div class="bloc-service">
+        <div class="grille">
+          <label>Service {{ loop.index }} : libellé<input name="{{ cle }}_libelle" value="{{ valeurs.get(cle ~ '_libelle', '') }}"></label>
+          <label>Personnes<input name="{{ cle }}_pers" inputmode="numeric" value="{{ valeurs.get(cle ~ '_pers', '') }}"></label>
+          <label>Heures (avant 22 h)<input name="{{ cle }}_h" inputmode="decimal" value="{{ valeurs.get(cle ~ '_h', '') }}"></label>
+          <label>Heures après 22 h<input name="{{ cle }}_hn" inputmode="decimal" value="{{ valeurs.get(cle ~ '_hn', '') }}"></label>
+          <label>Forfait proposé (CHF, facultatif)<input name="{{ cle }}_forfait" inputmode="decimal" value="{{ valeurs.get(cle ~ '_forfait', '') }}"></label>
+        </div>
+        <p class="libelle">Calculé : <strong data-sortie="{{ cle }}_calcule">CHF 0.00</strong> &middot; Retenu : <strong data-sortie="{{ cle }}_retenu">CHF 0.00</strong></p>
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="carte">
+      <h2>4. Débarras et vaisselle (forfait)</h2>
+      <div class="grille">
+        <label>Montant du forfait (CHF)<input name="debarras" inputmode="decimal" value="{{ valeurs.get('debarras', '') }}"></label>
+      </div>
+      <p class="libelle">Laisse 0 si le client n'en a pas besoin.</p>
+    </section>
+
+    <section class="carte">
+      <h2>5. Déplacement</h2>
+      <div class="grille">
+        <label>Kilomètres (aller simple)<input name="km" inputmode="decimal" value="{{ valeurs.get('km', '') }}"></label>
+        <label>Véhicules<input name="vehicules" inputmode="numeric" value="{{ valeurs.get('vehicules', '') }}"></label>
+        <label>Tarif au km (CHF)<input name="tarif_km" inputmode="decimal" value="{{ valeurs.get('tarif_km', '') }}"></label>
+      </div>
+      <p class="libelle">Calcul : km &times; 2 &times; véhicules &times; tarif. Total : <strong data-sortie="deplacement">CHF 0.00</strong></p>
+    </section>
+
+    <section class="carte">
+      <h2>6. TVA, validité et paiement</h2>
+      <div class="grille">
+        <label class="case"><input type="checkbox" name="tva_on" value="on" {{ 'checked' if valeurs.get('tva_on') == 'on' }}> Facturer la TVA</label>
+        <label>Taux de TVA (%)<input name="taux_tva" inputmode="decimal" value="{{ valeurs.get('taux_tva', '') }}"></label>
+        <label>Validité de l'offre (jours)<input name="validite" inputmode="numeric" value="{{ valeurs.get('validite', '') }}"></label>
+        <label>Acompte 1 à l'acceptation (%)<input name="p1" inputmode="decimal" value="{{ valeurs.get('p1', '') }}"></label>
+        <label>Acompte 2 un mois avant (%)<input name="p2" inputmode="decimal" value="{{ valeurs.get('p2', '') }}"></label>
+      </div>
+      <p class="libelle">Solde le jour de l'événement : <strong data-sortie="p3">0</strong> %</p>
+    </section>
+
+    <section class="carte">
+      <h2>7. Texte d'introduction</h2>
+      <p class="libelle">Chaque phrase cochée apparaît dans la lettre du devis. Les phrases marquées « à valider » sont des propositions de rédaction.</p>
+      {% for identifiant_phrase, phrase, marque in phrases %}
+      <label class="case phrase"><input type="checkbox" name="phrase_{{ identifiant_phrase }}" value="on" {{ 'checked' if valeurs.get('phrase_' ~ identifiant_phrase) == 'on' }}> <span>{{ phrase }}{% if marque %} <span class="pill devis_envoye">{{ marque }}</span>{% endif %}</span></label>
+      {% endfor %}
+      <label class="case phrase"><input type="checkbox" name="cgv" value="on" {{ 'checked' if valeurs.get('cgv') == 'on' }}> <span>Joindre les conditions générales (ajoute la phrase « Nos conditions générales sont jointes à ce courriel. »)</span></label>
+      <p></p>
+      <label>Ligne libre (facultative)<input name="libre" value="{{ valeurs.get('libre', '') }}" placeholder="Une phrase propre à ce client"></label>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="btn">Enregistrer le devis</button>
+      <a class="btn secondaire" href="{{ url_for('fiche_devis', identifiant=identifiant) if edition else url_for('fiche_demande', identifiant=demande.id) }}">Annuler</a>
+    </div>
+  </div>
+
+  <aside class="droite">
+    <section class="carte recap">
+      <h2>Récapitulatif</h2>
+      <dl>
+        <dt>Nourriture et boissons</dt><dd data-sortie="nourriture">CHF 0.00</dd>
+        <dt>Service 1</dt><dd data-sortie="s1_retenu">CHF 0.00</dd>
+        <dt>Service 2</dt><dd data-sortie="s2_retenu">CHF 0.00</dd>
+        <dt>Débarras et vaisselle</dt><dd data-sortie="debarras_montant">CHF 0.00</dd>
+        <dt>Déplacement</dt><dd data-sortie="deplacement">CHF 0.00</dd>
+        <dt class="total">Total HT</dt><dd class="total" data-sortie="total_ht">CHF 0.00</dd>
+        <dt>TVA</dt><dd data-sortie="montant_tva">CHF 0.00</dd>
+        <dt class="total">Total à payer</dt><dd class="total" data-sortie="total_ttc">CHF 0.00</dd>
+      </dl>
+      <h2>Échéancier</h2>
+      <dl>
+        <dt>À l'acceptation</dt><dd data-sortie="a1">CHF 0.00</dd>
+        <dt>Un mois avant</dt><dd data-sortie="a2">CHF 0.00</dd>
+        <dt>Jour de l'événement</dt><dd data-sortie="a3">CHF 0.00</dd>
+      </dl>
+      <p class="libelle">Les montants sont recalculés à l'enregistrement.</p>
+    </section>
+  </aside>
+</form>
+<script src="{{ url_for('static', filename='devis.js') }}" defer></script>
+{% endblock %}

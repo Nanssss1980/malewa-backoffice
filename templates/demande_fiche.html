@@ -59,4 +59,23 @@
     </section>
   </div>
 </div>
+
+<section class="carte">
+  <div class="entete">
+    <h2>Devis</h2>
+    {% if utilisateur.role == 'admin' %}<a class="btn" href="{{ url_for('nouveau_devis', identifiant=demande.id) }}">Créer un devis</a>{% endif %}
+  </div>
+  {% if devis_liste %}
+  <div class="defile">
+    <table class="tableau">
+      <thead><tr><th>Numéro</th><th>Émis le</th><th>Statut</th><th class="droite-texte">Total</th></tr></thead>
+      <tbody>
+      {% for d in devis_liste %}
+        <tr><td><a href="{{ url_for('fiche_devis', identifiant=d.id) }}">{{ d.numero }}</a> (v{{ d.version }})</td><td>{{ d.date_emission|date_fr }}</td><td>{{ STATUTS_DEVIS.get(d.statut, d.statut) }}</td><td class="droite-texte">{{ d.total_ttc|chf2 }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="libelle">Aucun devis pour cette demande.</p>{% endif %}
+</section>
 {% endblock %}

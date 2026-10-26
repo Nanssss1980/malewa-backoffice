@@ -22,6 +22,7 @@ class Donnees:  # même interface que la version Supabase
     def __init__(self):  # prépare les données fictives
         self.clients = {}  # clients par identifiant
         self.demandes = {}  # demandes par identifiant
+        self.devis_par_id = {}  # devis par identifiant
         fictifs = [  # (prénom, nom, entreprise, e-mail, titre, source, type, date, adultes, enfants, budget, statut)
             ("Aurélie", "Exemple", None, "aurelie@exemple.test", "Mariage Exemple", "whatsapp", "mariage", "2027-06-19", 120, 10, 12000, "nouvelle"),
             ("Marc", "Démo", None, "marc@exemple.test", "Anniversaire 40 ans", "site", "evenement_prive", "2027-03-06", 45, 0, None, "en_discussion"),
@@ -91,3 +92,27 @@ class Donnees:  # même interface que la version Supabase
 
     def changer_statut(self, jeton, identifiant, statut):  # change l'étape
         self.demandes[identifiant]["statut"] = statut  # écrit le statut
+
+    # ------------------------------------------------------------ devis
+    def reglages(self, jeton):  # réglages fictifs
+        return {"tarif_horaire": 35, "tarif_horaire_nuit": 42, "tarif_km": 1.2, "taux_tva": 8.1, "validite_jours": 14, "pourcentage_acompte_1": 10, "pourcentage_acompte_2": 60}  # valeurs par défaut
+
+    def devis_de_demande(self, jeton, demande_id):  # devis d'une demande
+        return [d for d in self.devis_par_id.values() if d["demande_id"] == demande_id]  # filtre
+
+    def devis(self, jeton, identifiant):  # un devis avec sa demande
+        d = self.devis_par_id.get(identifiant)  # cherche
+        if not d:  # introuvable
+            return None  # rien
+        return {**d, "demandes": self._avec_client(self.demandes[d["demande_id"]])}  # joint la demande et le client
+
+    def prochain_numero(self, jeton):  # numéro fictif AAAA-NNN
+        return f"2026-{len(self.devis_par_id) + 1:03d}"  # compteur simple
+
+    def creer_devis(self, jeton, demande_id, devis, lignes):  # enregistre un devis fictif
+        identifiant = _nouvel_id()  # identifiant unique
+        self.devis_par_id[identifiant] = {"id": identifiant, "demande_id": demande_id, "numero": self.prochain_numero(jeton), "version": 1, "statut": "brouillon", "date_emission": "2026-10-26", "lignes": lignes, **devis}  # enregistre
+        return identifiant  # identifiant du devis
+
+    def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour un devis fictif
+        self.devis_par_id[identifiant].update({**devis, "lignes": lignes})  # écrase

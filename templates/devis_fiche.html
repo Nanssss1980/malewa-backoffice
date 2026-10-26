@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titre %}Devis {{ devis.numero }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('fiche_demande', identifiant=demande.id) }}">&larr; {{ demande.titre }}</a>
+    <h1>Devis {{ devis.numero }}</h1>
+    <p class="libelle">{{ client|nom_client }} &middot; émis le {{ devis.date_emission|date_fr }} &middot; version {{ devis.version }} &middot; <span class="pill">{{ STATUTS_DEVIS.get(devis.statut, devis.statut) }}</span></p>
+  </div>
+  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_devis', identifiant=devis.id) }}">Modifier</a>{% endif %}
+</div>
+
+<div class="deux">
+  <div class="gauche formulaire">
+    <section class="carte">
+      <h2>{{ devis.titre }}</h2>
+      {% if devis.formule_appel %}<p>{{ devis.formule_appel }}</p>{% endif %}
+      {% for ligne in (devis.introduction_texte or '').split('\n') if ligne %}<p>{{ ligne }}</p>{% endfor %}
+      {% if devis.menu_texte %}<p class="libelle">Menu proposé</p><p class="menu">{{ devis.menu_texte }}</p>{% endif %}
+    </section>
+
+    <section class="carte defile">
+      <h2>Détail</h2>
+      <table class="tableau">
+        <thead><tr><th>Désignation</th><th>Détail</th><th class="droite-texte">Montant</th></tr></thead>
+        <tbody>
+        {% for ligne in devis.lignes %}
+          <tr>
+            <td>{{ ligne.libelle }}</td>
+            <td>{{ ligne.details or '' }}{% if ligne.forfait_propose %} <span class="pill devis_envoye">forfait proposé</span>{% endif %}</td>
+            <td class="droite-texte">{{ ligne.montant|chf2 }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <aside class="droite">
+    <section class="carte recap">
+      <h2>Totaux</h2>
+      <dl>
+        <dt class="total">Total HT</dt><dd class="total">{{ devis.total_ht|chf2 }}</dd>
+        {% if devis.soumis_tva %}<dt>TVA {{ '%g' % devis.taux_tva }} %</dt><dd>{{ devis.montant_tva|chf2 }}</dd>{% else %}<dt>TVA</dt><dd>non facturée</dd>{% endif %}
+        <dt class="total">Total à payer</dt><dd class="total">{{ devis.total_ttc|chf2 }}</dd>
+      </dl>
+      <h2>Échéancier</h2>
+      <dl>
+        <dt>À l'acceptation ({{ '%g' % devis.pourcentage_acompte_1 }} %)</dt><dd>{{ totaux.a1|chf2 }}</dd>
+        <dt>Un mois avant ({{ '%g' % devis.pourcentage_acompte_2 }} %)</dt><dd>{{ totaux.a2|chf2 }}</dd>
+        <dt>Jour de l'événement ({{ '%g' % totaux.p3 }} %)</dt><dd>{{ totaux.a3|chf2 }}</dd>
+      </dl>
+      <p class="libelle">Offre valable {{ devis.validite_jours }} jours. {% if devis.cgv_jointes %}CGV jointes.{% endif %}</p>
+    </section>
+    <section class="carte">
+      <h2>PDF</h2>
+      <p class="libelle">La génération du PDF est la prochaine étape.</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@ Accès privé, sur invitation uniquement (3 comptes).
 - Rôles : `admin` (modifie), `lecture` (consulte)
 - Demandes : liste filtrable, fiche, création, modification, changement de statut
 - Alerte « date déjà prise » (anti-doubles réservations)
+- Devis : formulaire avec calculs en direct, TVA en option, services au tarif horaire ou au forfait, échéancier, texte d'introduction à cocher, fiche et modification
 - Mode démo avec données fictives
 
 ## Stack
@@ -24,6 +25,8 @@ Accès privé, sur invitation uniquement (3 comptes).
 | `app.py` | Pages, sécurité, règles de l'app |
 | `donnees_supabase.py` | Échanges avec la base Supabase |
 | `donnees_demo.py` | Données fictives pour tester sans base |
+| `calcul.py` | Calculs du devis (lignes, TVA, acomptes), avec des Decimal pour des montants exacts |
+| `phrases.py` | Phrases proposées pour la lettre du devis |
 | `templates/` | Pages HTML |
 | `static/` | Style, logo, polices (hébergées ici, aucun service externe) |
 
@@ -70,4 +73,4 @@ Plan gratuit : le service se met en veille après une période d'inactivité, et
 
 ## Suite prévue
 
-Devis (formulaire et PDF), acomptes, calendrier, dépenses et remboursements, tâches de préparation.
+PDF du devis, acomptes, calendrier, dépenses et remboursements, tâches de préparation.

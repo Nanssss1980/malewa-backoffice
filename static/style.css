@@ -61,3 +61,15 @@ input[type=checkbox] { width: 20px; height: 20px; padding: 0; }
 .demo { background: var(--warn-bg); text-align: center; font-size: 13px; padding: 6px; }
 @media (max-width: 640px) { .bar, .page { padding-left: 16px; padding-right: 16px; } h1 { font-size: 26px; } }
 .formulaire { display: flex; flex-direction: column; gap: 22px; }
+
+.bloc-service { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 16px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.phrase { align-items: flex-start; padding: 6px 0; }
+.phrase input { margin-top: 2px; flex-shrink: 0; }
+.recap { position: sticky; top: 16px; }
+.recap dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0 0 18px; }
+.recap dt, .recap dd { margin: 0; }
+.recap dd { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.recap .total { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 700; color: var(--indigo); }
+.droite-texte { text-align: right; }
+.menu { white-space: pre-line; }
