@@ -94,8 +94,14 @@ class Donnees:  # même interface que la version Supabase
         self.demandes[identifiant]["statut"] = statut  # écrit le statut
 
     # ------------------------------------------------------------ devis
-    def reglages(self, jeton):  # réglages fictifs
-        return {"raison_sociale": "Malewa Sàrl", "adresse": "La Claie-aux-Moines 17, 1000 Lausanne 26", "numero_ide": "CHE-209.761.684", "email": "info@malewa.ch", "telephone": "+41 78 603 36 11", "mention_signature": "Malewa Service Traiteur", "tarif_horaire": 35, "tarif_horaire_nuit": 42, "tarif_km": 1.2, "taux_tva": 8.1, "validite_jours": 14, "pourcentage_acompte_1": 10, "pourcentage_acompte_2": 60}  # valeurs par défaut
+    def reglages(self, jeton):  # réglages fictifs (gardés en mémoire pour pouvoir les modifier)
+        if not hasattr(self, "_reglages"):  # première lecture
+            self._reglages = {"raison_sociale": "Malewa Sàrl", "adresse": "La Claie-aux-Moines 17, 1000 Lausanne 26", "numero_ide": "CHE-209.761.684", "site_web": "https://malewa.ch", "email": "info@malewa.ch", "telephone": "+41 78 603 36 11", "banque": "Banque de démonstration", "adresse_banque": "Rue du Test 1, 1000 Lausanne", "iban": "CH93 0076 2011 6238 5295 7", "signataire_nom": "Nady Nzita-Nanga", "signataire_fonction": "Gérante", "mention_signature": "Malewa Service Traiteur", "tarif_horaire": 35, "tarif_horaire_nuit": 42, "tarif_km": 1.2, "taux_tva": 8.1, "validite_jours": 14, "pourcentage_acompte_1": 10, "pourcentage_acompte_2": 60}  # valeurs par défaut
+        return dict(self._reglages)  # copie, pour ne pas modifier par accident
+
+    def modifier_reglages(self, jeton, valeurs):  # enregistre les réglages fictifs
+        self.reglages(jeton)  # s'assure qu'ils existent
+        self._reglages.update(valeurs)  # applique les changements
 
     def devis_de_demande(self, jeton, demande_id):  # devis d'une demande
         return [d for d in self.devis_par_id.values() if d["demande_id"] == demande_id]  # filtre

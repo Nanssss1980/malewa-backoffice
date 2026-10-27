@@ -97,6 +97,9 @@ class Donnees:  # regroupe tous les échanges avec la base
         reponse = self._client(jeton).table("reglages").select("*").eq("id", 1).execute()  # lecture
         return reponse.data[0] if reponse.data else {}  # dictionnaire vide si absent
 
+    def modifier_reglages(self, jeton, valeurs):  # enregistre les réglages (ligne unique id = 1, réservé aux admins par la RLS)
+        self._client(jeton).table("reglages").update(self._json(valeurs)).eq("id", 1).execute()  # mise à jour
+
     def devis_de_demande(self, jeton, demande_id):  # liste des devis d'une demande, du plus récent au plus ancien
         return self._client(jeton).table("devis").select("id, numero, version, statut, date_emission, total_ttc").eq("demande_id", demande_id).order("cree_le", desc=True).execute().data  # lecture
 

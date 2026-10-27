@@ -467,6 +467,75 @@ def modifier_devis(identifiant):  # affiche et traite le formulaire
     return rendre_devis_form(demande, devis_actuel.get("saisie") or valeurs_initiales(demande, db.reglages(jeton())), [], True, identifiant)  # formulaire prérempli avec la saisie d'origine
 
 
+# ---------------------------------------------------------------- réglages
+CHAMPS_TEXTE_REGLAGES = ["raison_sociale", "adresse", "numero_ide", "site_web", "email", "telephone", "banque", "adresse_banque", "signataire_nom", "signataire_fonction", "mention_signature"]  # champs texte libres
+CHAMPS_NOMBRE_REGLAGES = [  # code, libellé, minimum, maximum
+    ("tarif_horaire", "Tarif horaire de jour", Decimal("0"), Decimal("500")),
+    ("tarif_horaire_nuit", "Tarif horaire de nuit", Decimal("0"), Decimal("500")),
+    ("tarif_km", "Tarif au kilomètre", Decimal("0"), Decimal("20")),
+    ("taux_tva", "Taux de TVA", Decimal("0"), Decimal("30")),
+    ("pourcentage_acompte_1", "Premier acompte (%)", Decimal("0"), Decimal("100")),
+    ("pourcentage_acompte_2", "Deuxième acompte (%)", Decimal("0"), Decimal("100")),
+]
+
+
+def iban_valide(iban):  # vérifie la longueur et la clé de contrôle (modulo 97) d'un IBAN
+    if not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", iban):  # forme générale
+        return False  # refusé
+    if iban[:2] in ("CH", "LI") and len(iban) != 21:  # IBAN suisse ou liechtensteinois : 21 caractères
+        return False  # refusé
+    deplace = iban[4:] + iban[:4]  # déplace les 4 premiers caractères à la fin
+    chiffres = "".join(str(int(c, 36)) for c in deplace)  # lettres converties en nombres (A = 10 ...)
+    return int(chiffres) % 97 == 1  # clé de contrôle correcte
+
+
+def iban_lisible(iban):  # CH9300762011623852957 devient CH93 0076 2011 6238 5295 7
+    return " ".join(iban[i:i + 4] for i in range(0, len(iban), 4))  # groupes de 4
+
+
+@app.route("/reglages", methods=["GET", "POST"])  # écran des réglages
+@admin_requis  # réservé aux admins (l'IBAN et la banque ne sont pas pour tout le monde)
+def reglages():  # affiche et enregistre les réglages
+    if request.method == "POST":  # formulaire envoyé
+        erreurs = []  # messages à corriger
+        valeurs = {nom: texte(request.form, nom) for nom in CHAMPS_TEXTE_REGLAGES}  # champs texte
+        if valeurs["email"] and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", valeurs["email"]):  # e-mail mal formé
+            erreurs.append("L'adresse e-mail n'est pas valide.")  # message
+        brut_iban = re.sub(r"\s", "", request.form.get("iban") or "").upper()  # IBAN sans espaces
+        if brut_iban and not iban_valide(brut_iban):  # IBAN rempli mais faux
+            erreurs.append("L'IBAN n'est pas valide : vérifie les chiffres (une IBAN suisse a 21 caractères).")  # message
+        valeurs["iban"] = iban_lisible(brut_iban) if brut_iban else None  # enregistré avec espaces
+        for nom, libelle, minimum, maximum in CHAMPS_NOMBRE_REGLAGES:  # nombres décimaux
+            brut = (request.form.get(nom) or "").strip().replace(",", ".")  # virgule acceptée
+            try:  # lecture du nombre
+                nombre = Decimal(brut)  # conversion exacte
+            except Exception:  # texte invalide ou vide
+                erreurs.append(f"{libelle} : saisis un nombre.")  # message
+                continue  # champ suivant
+            if not nombre.is_finite() or nombre < minimum or nombre > maximum:  # hors limites
+                erreurs.append(f"{libelle} : entre {minimum} et {maximum}.")  # message
+            valeurs[nom] = nombre  # garde la valeur
+        brut_jours = (request.form.get("validite_jours") or "").strip()  # durée de validité
+        if brut_jours.isdigit() and 1 <= int(brut_jours) <= 365:  # entier raisonnable
+            valeurs["validite_jours"] = int(brut_jours)  # garde la valeur
+        else:  # invalide
+            erreurs.append("Validité du devis : un nombre de jours entre 1 et 365.")  # message
+        a1, a2 = valeurs.get("pourcentage_acompte_1"), valeurs.get("pourcentage_acompte_2")  # acomptes
+        if isinstance(a1, Decimal) and isinstance(a2, Decimal) and a1 + a2 > 100:  # plus que le total
+            erreurs.append("Les deux acomptes dépassent 100 % du total.")  # message
+        if not valeurs["raison_sociale"]:  # nom obligatoire
+            erreurs.append("La raison sociale est obligatoire.")  # message
+        if erreurs:  # affiche à nouveau avec la saisie
+            saisie = {**request.form, "iban": request.form.get("iban", "")}  # valeurs retapées
+            return render_template("reglages.html", valeurs=saisie, erreurs=erreurs), 422  # erreur de validation
+        db.modifier_reglages(jeton(), valeurs)  # enregistre
+        flash("Réglages enregistrés. Ils s'appliquent aux prochains devis et PDF.", "ok")  # confirmation
+        return redirect(url_for("reglages"))  # évite le renvoi du formulaire
+    courants = db.reglages(jeton())  # réglages enregistrés
+    valeurs = {cle: (nombre_texte(v) if cle in [c[0] for c in CHAMPS_NOMBRE_REGLAGES] + ["validite_jours"] else (v or "")) for cle, v in courants.items()}  # texte prêt pour les champs
+    return render_template("reglages.html", valeurs=valeurs, erreurs=[])  # affiche le formulaire
+
+
 @app.route("/sante")  # page de contrôle pour l'hébergeur (aucune donnée)
 def sante():  # répond « ok »
     return "ok"  # texte simple
