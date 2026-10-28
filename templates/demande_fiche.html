@@ -42,6 +42,7 @@
       <div><div class="libelle">Invités</div><div class="valeur">{{ demande.adultes }} adultes, {{ demande.enfants }} enfants</div></div>
       <div><div class="libelle">Budget indiqué (facultatif)</div><div class="valeur">{{ demande.budget_indique|chf }}</div></div>
       <div><div class="libelle">Source</div><div class="valeur">{{ sources.get(demande.source, '') }}</div></div>
+      <div><div class="libelle">Origine</div><div class="valeur">{{ LIBELLE_ORIGINE.get(demande.origine or '', '') or 'Non précisée' }}</div></div>
       <div><div class="libelle">Reçue le</div><div class="valeur">{{ demande.recue_le|date_fr }}</div></div>
     </div>
     {% if demande.message_client %}<p class="libelle">Message du client</p><p class="alerte">{{ demande.message_client }}</p>{% endif %}

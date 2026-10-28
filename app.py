@@ -39,6 +39,7 @@ STATUTS = [  # étapes d'une demande : code, libellé affiché
 ]
 LIBELLE_STATUT = dict(STATUTS)  # code vers libellé
 SOURCES = [("site", "Site web"), ("whatsapp", "WhatsApp"), ("telephone", "Téléphone"), ("email", "E-mail"), ("autre", "Autre")]  # origines possibles
+ORIGINES = [("", "Non précisé"), ("google", "Google"), ("instagram", "Instagram"), ("recommandation", "Recommandation"), ("festival", "Festival"), ("mariage", "Mariage auquel j'ai assisté"), ("autre", "Autre")]  # comment le client a connu Malewa (liste fermée pour comparer les réponses)
 TYPES = [("mariage", "Mariage"), ("evenement_prive", "Événement privé"), ("evenement_entreprise", "Événement d'entreprise"), ("festival", "Festival"), ("autre", "Autre")]  # types d'événement
 CONTACTS = [("", "Non précisé"), ("email", "E-mail"), ("whatsapp", "WhatsApp"), ("telephone", "Téléphone")]  # canaux préférés
 CIVILITES = {"": ("Madame, Monsieur,", ""), "madame": ("Chère Madame,", "Madame"), "monsieur": ("Cher Monsieur,", "Monsieur"), "couple": ("Chère Madame, cher Monsieur,", "Madame et Monsieur")}  # civilité : formule d'appel, titre dans l'adresse
@@ -87,7 +88,7 @@ def nom_client(client):  # prénom + nom, ou entreprise
 def variables_communes():  # définit ces variables
     if "_csrf" not in session:  # première visite
         session["_csrf"] = secrets.token_hex(16)  # crée un jeton anti-falsification
-    return {"csrf_token": session["_csrf"], "utilisateur": session.get("utilisateur"), "LIBELLE_STATUT": LIBELLE_STATUT, "STATUTS_DEVIS": STATUTS_DEVIS, "MODE_DEMO": MODE_DEMO}  # variables partagées
+    return {"csrf_token": session["_csrf"], "utilisateur": session.get("utilisateur"), "LIBELLE_STATUT": LIBELLE_STATUT, "STATUTS_DEVIS": STATUTS_DEVIS, "MODE_DEMO": MODE_DEMO, "ORIGINES": ORIGINES, "LIBELLE_ORIGINE": dict(ORIGINES)}  # variables partagées
 
 
 @app.before_request  # exécuté avant chaque requête
@@ -193,11 +194,12 @@ def lire_formulaire(form):  # transforme le formulaire en client + demande, avec
             erreurs.append("Le budget doit être un nombre.")  # message d'erreur
             budget = None  # valeur de repli
     source = form.get("source", "autre")  # origine de la demande
+    origine = form.get("origine", "")  # comment le client a connu Malewa
     genre = form.get("type_evenement", "autre")  # type d'événement
-    if source not in dict(SOURCES) or genre not in dict(TYPES):  # valeurs inattendues
+    if source not in dict(SOURCES) or genre not in dict(TYPES) or origine not in dict(ORIGINES):  # valeurs inattendues
         abort(400)  # requête refusée
     demande = {  # champs de la demande
-        "titre": texte(form, "titre") or "Demande sans titre", "source": source, "type_evenement": genre,
+        "titre": texte(form, "titre") or "Demande sans titre", "source": source, "origine": origine or None, "type_evenement": genre,
         "date_evenement": date_evenement, "horaire": texte(form, "horaire"), "lieu": texte(form, "lieu"),
         "adultes": entier(form, "adultes", erreurs, "Adultes"), "enfants": entier(form, "enfants", erreurs, "Enfants"),
         "budget_indique": budget or None, "message_client": texte(form, "message_client"), "notes_internes": texte(form, "notes_internes"),
