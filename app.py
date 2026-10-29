@@ -47,6 +47,8 @@ TYPES = [("mariage", "Mariage"), ("evenement_prive", "Événement privé"), ("ev
 CONTACTS = [("", "Non précisé"), ("email", "E-mail"), ("whatsapp", "WhatsApp"), ("telephone", "Téléphone")]  # canaux préférés
 CIVILITES = {"": ("Madame, Monsieur,", ""), "madame": ("Chère Madame,", "Madame"), "monsieur": ("Cher Monsieur,", "Monsieur"), "couple": ("Chère Madame, cher Monsieur,", "Madame et Monsieur")}  # civilité : formule d'appel, titre dans l'adresse
 CIVILITE_CHOIX = [("", "Non précisé"), ("madame", "Madame"), ("monsieur", "Monsieur"), ("couple", "Madame et Monsieur")]  # choix proposés dans le formulaire
+STATUTS_DEVIS_CHOIX = ("brouillon", "envoye", "accepte", "refuse")  # statuts qu'on peut choisir à la main
+AVANCE_DEMANDE = {"envoye": ("devis_envoye", ("nouvelle", "en_discussion")), "accepte": ("accepte", ("nouvelle", "en_discussion", "devis_envoye"))}  # un devis envoyé ou accepté fait avancer la demande (jamais reculer)
 STATUTS_DEVIS = {"brouillon": "Brouillon", "envoye": "Envoyé", "accepte": "Accepté", "refuse": "Refusé", "remplace": "Remplacé"}  # statuts autorisés pour un devis
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]  # mois en français
 
@@ -435,7 +437,25 @@ def fiche_devis(identifiant):  # affiche le devis
     if not devis:  # introuvable
         abort(404)  # page introuvable
     totaux = echeances(devis)  # acomptes et solde
-    return render_template("devis_fiche.html", devis=devis, demande=devis["demandes"], client=devis["demandes"]["clients"], totaux=totaux)  # affiche la page
+    return render_template("devis_fiche.html", statuts_devis=[(c, STATUTS_DEVIS[c]) for c in STATUTS_DEVIS_CHOIX], devis=devis, demande=devis["demandes"], client=devis["demandes"]["clients"], totaux=totaux)  # affiche la page
+
+
+@app.route("/devis/<identifiant>/statut", methods=["POST"])  # changement de statut d'un devis (brouillon, envoyé, accepté, refusé)
+@admin_requis  # réservée aux admins
+def changer_statut_devis(identifiant):  # enregistre le statut du devis et fait avancer la demande si besoin
+    statut = request.form.get("statut", "")  # statut choisi
+    if statut not in STATUTS_DEVIS_CHOIX:  # valeur inattendue (« remplacé » ne se choisit pas à la main)
+        abort(400)  # requête refusée
+    devis = db.devis(jeton(), identifiant)  # lit le devis avec sa demande
+    if not devis:  # introuvable
+        abort(404)  # page introuvable
+    db.changer_statut_devis(jeton(), identifiant, statut)  # écrit le statut du devis
+    demande = devis["demandes"]  # demande liée
+    suite = AVANCE_DEMANDE.get(statut)  # (nouveau statut de la demande, statuts qui peuvent avancer)
+    if suite and demande["statut"] in suite[1]:  # la demande est en retard sur le devis : elle avance, jamais l'inverse
+        db.changer_statut(jeton(), demande["id"], suite[0])  # aligne la demande
+    flash(f"Devis : {STATUTS_DEVIS[statut]}.", "ok")  # confirmation
+    return redirect(url_for("fiche_devis", identifiant=identifiant))  # retour à la fiche du devis
 
 
 def echeances(devis):  # calcule les deux acomptes et le solde d'un devis enregistré (le solde est le reste exact)

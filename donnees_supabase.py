@@ -89,6 +89,9 @@ class Donnees:  # regroupe tous les échanges avec la base
         self._client(jeton).table("demandes").update({"statut": statut}).eq("id", identifiant).execute()  # écrit le nouveau statut
 
     # ------------------------------------------------------------ devis
+    def changer_statut_devis(self, jeton, identifiant, statut):  # change le statut d'un devis
+        self._client(jeton).table("devis").update({"statut": statut}).eq("id", identifiant).execute()  # écrit le nouveau statut
+
     @staticmethod
     def _json(dictionnaire):  # prépare un dictionnaire pour l'envoi à Supabase (Decimal devient nombre)
         return {cle: (float(valeur) if isinstance(valeur, Decimal) else valeur) for cle, valeur in dictionnaire.items()}  # montants en nombres

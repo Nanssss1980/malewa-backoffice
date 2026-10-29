@@ -10,6 +10,20 @@
   {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_devis', identifiant=devis.id) }}">Modifier</a>{% endif %}
 </div>
 
+<div class="statuts" role="group" aria-label="Statut du devis">
+  {% for code, nom in statuts_devis %}
+    {% if utilisateur.role == 'admin' %}
+      <form method="post" action="{{ url_for('changer_statut_devis', identifiant=devis.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="statut" value="{{ code }}">
+        <button type="submit" class="{{ 'courant' if devis.statut == code }}" {{ 'aria-current=true' if devis.statut == code }}>{{ nom }}</button>
+      </form>
+    {% else %}
+      <span class="pill">{{ nom }}</span>
+    {% endif %}
+  {% endfor %}
+</div>
+
 <div class="deux">
   <div class="gauche formulaire">
     <section class="carte">

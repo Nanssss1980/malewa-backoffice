@@ -120,6 +120,9 @@ class Donnees:  # même interface que la version Supabase
         self.devis_par_id[identifiant] = {"id": identifiant, "demande_id": demande_id, "numero": self.prochain_numero(jeton), "version": 1, "statut": "brouillon", "date_emission": "2026-10-26", "lignes": lignes, **devis}  # enregistre
         return identifiant  # identifiant du devis
 
+    def changer_statut_devis(self, jeton, identifiant, statut):  # change le statut d'un devis fictif
+        self.devis_par_id[identifiant]["statut"] = statut  # écrit le statut
+
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour un devis fictif
         self.devis_par_id[identifiant].update({**devis, "lignes": lignes})  # écrase
 
