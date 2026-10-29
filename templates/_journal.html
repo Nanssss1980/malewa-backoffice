@@ -1,0 +1,10 @@
+{% if journal %}
+<ul class="journal">
+  {% for e in journal %}
+  <li>
+    <span class="libelle">{{ e.cree_le|date_fr }} · {{ e.auteur or '' }}{% if e.strategie_actions %} · <a href="{{ url_for('fiche_action', identifiant=e.strategie_actions.id) }}">Action {{ e.strategie_actions.numero }}</a>{% endif %}{% if e.strategie_pistes %} · <a href="{{ url_for('fiche_piste', identifiant=e.strategie_pistes.id) }}">{{ e.strategie_pistes.nom }}</a>{% endif %}</span>
+    <div class="menu">{{ e.texte }}</div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="libelle">Rien pour l'instant.</p>{% endif %}

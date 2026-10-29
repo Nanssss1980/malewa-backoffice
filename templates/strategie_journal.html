@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titre %}Journal{% endblock %}
+{% block contenu %}
+{% set actif = 'journal' %}
+<div class="entete"><h1>Journal</h1></div>
+{% include "_strategie_nav.html" %}
+<section class="carte"><h2>Ce qui a été entrepris</h2>{% include "_journal.html" %}</section>
+{% endblock %}

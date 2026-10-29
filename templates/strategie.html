@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titre %}Stratégie{% endblock %}
+{% block contenu %}
+{% set actif = 'accueil' %}
+<div class="entete"><h1>Stratégie</h1></div>
+{% include "_strategie_nav.html" %}
+
+<div class="tuiles">
+  <a class="tuile" href="{{ url_for('strategie_actions', statut='fait') }}"><span class="libelle">Actions faites</span><strong>{{ comptes.fait }} / {{ total_actions }}</strong><progress max="{{ total_actions or 1 }}" value="{{ comptes.fait }}"></progress></a>
+  <a class="tuile {{ 'alerte-tuile' if retard }}" href="{{ url_for('strategie_actions', retard=1) }}"><span class="libelle">En retard</span><strong>{{ retard|length }}</strong><span class="libelle">{{ comptes.en_cours }} en cours</span></a>
+  <div class="tuile"><span class="libelle">Demandes · {{ mois_courant.libelle if mois_courant else 'ce mois' }}</span><strong>{{ mois_courant.demandes if mois_courant else 0 }}</strong><span class="libelle">{{ mois_courant.devis_envoyes if mois_courant else 0 }} devis envoyés · {{ mois_courant.devis_signes if mois_courant else 0 }} signés</span></div>
+  <a class="tuile" href="{{ url_for('strategie_kpi') }}"><span class="libelle">CA signé 2027 (HT)</span><strong>{{ kpi.total.ca_total|chf }}</strong><span class="libelle">dont acompte reçu : {{ kpi.total.ca_paye|chf }}{% if kpi.pourcent_total is not none %} · {{ kpi.pourcent_total|pct }} de la cible{% endif %}</span></a>
+</div>
+
+{% if manques.sans_couts or manques.sans_origine %}
+<section class="carte a-completer">
+  <h2>À compléter dans les demandes</h2>
+  <div class="grille">
+    {% if manques.sans_couts %}<div><div class="libelle">Événements passés sans coûts ({{ manques.sans_couts|length }})</div><ul class="liste">{% for d in manques.sans_couts[:5] %}<li><a href="{{ url_for('fiche_demande', identifiant=d.id) }}">{{ d.titre }}</a> <span class="libelle">{{ d.date_evenement|date_fr }}</span></li>{% endfor %}</ul></div>{% endif %}
+    {% if manques.sans_origine %}<div><div class="libelle">Demandes sans origine ({{ manques.sans_origine|length }})</div><ul class="liste">{% for d in manques.sans_origine[:5] %}<li><a href="{{ url_for('fiche_demande', identifiant=d.id) }}">{{ d.titre }}</a></li>{% endfor %}</ul></div>{% endif %}
+  </div>
+  <p class="libelle">Dans la demande : « Modifier », puis « Coûts réels » ou « Comment nous a-t-il connus ? ». Une minute par demande.</p>
+</section>
+{% endif %}
+
+<div class="deux">
+  <section class="carte gauche">
+    <h2>Prochaines échéances</h2>
+    {% if prochaines %}
+    <table class="tableau">
+      <thead><tr><th>Échéance</th><th>Action</th><th>Axe</th><th>Statut</th></tr></thead>
+      <tbody>
+      {% for a in prochaines %}
+        <tr>
+          <td>{{ a.echeance|date_fr }}{% if a in retard %}<br><span class="pill refuse">En retard</span>{% endif %}</td>
+          <td><a href="{{ url_for('fiche_action', identifiant=a.id) }}">{{ a.action }}</a></td>
+          <td>{{ LIBELLE_AXE[a.axe] }}</td>
+          <td><span class="pill {{ 'devis_envoye' if a.statut == 'en_cours' }}">{{ LIBELLE_STATUT_ACTION[a.statut] }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>Aucune action ouverte.</p>{% endif %}
+    <p><a href="{{ url_for('strategie_actions') }}">Toutes les actions</a></p>
+  </section>
+  <div class="droite">
+    <section class="carte">
+      <h2>Relances à faire (7 jours)</h2>
+      {% if relances %}<ul class="liste">{% for p in relances %}<li><a href="{{ url_for('fiche_piste', identifiant=p.id) }}">{{ p.nom }}</a> <span class="libelle">{{ p.prochaine_relance|date_fr }}</span></li>{% endfor %}</ul>{% else %}<p class="libelle">Aucune relance prévue. Fixe une date dans la fiche d'une piste.</p>{% endif %}
+    </section>
+    <section class="carte">
+      <h2>Pistes</h2>
+      <ul class="liste">{% for c in par_categorie %}<li><a href="{{ url_for('strategie_pistes', categorie=c.code) }}">{{ c.libelle }}</a> <span class="libelle">{{ c.a_faire }} à faire · {{ c.en_cours }} en cours · {{ c.retenues }} retenue(s)</span></li>{% endfor %}</ul>
+    </section>
+  </div>
+</div>
+
+<div class="deux">
+  <section class="carte gauche">
+    <h2>D'où viennent les demandes ?</h2>
+    {% if origines %}
+    <table class="tableau">
+      <thead><tr><th>Origine</th><th>Demandes</th><th>Signées</th><th>CA signé (HT)</th></tr></thead>
+      <tbody>{% for o in origines %}<tr><td>{{ o.libelle }}</td><td>{{ o.demandes }}</td><td>{{ o.signees }}</td><td>{{ o.ca|chf }}</td></tr>{% endfor %}</tbody>
+    </table>
+    {% else %}<p>Aucune demande pour l'instant.</p>{% endif %}
+  </section>
+  <section class="carte droite">
+    <h2>Journal récent</h2>
+    {% include "_journal.html" %}
+    <p><a href="{{ url_for('strategie_journal') }}">Tout le journal</a></p>
+  </section>
+</div>
+{% endblock %}

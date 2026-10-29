@@ -12,7 +12,7 @@
   {% if utilisateur %}
   <header class="bar">
     <a class="marque" href="{{ url_for('liste_demandes') }}">MALEWA</a>
-    <nav aria-label="Navigation principale"><a href="{{ url_for('liste_demandes') }}">Demandes</a>{% if utilisateur.role == 'admin' %}<a href="{{ url_for('reglages') }}">Réglages</a>{% endif %}</nav>
+    <nav aria-label="Navigation principale"><a href="{{ url_for('liste_demandes') }}">Demandes</a><a href="{{ url_for('strategie_accueil') }}">Stratégie</a>{% if utilisateur.role == 'admin' %}<a href="{{ url_for('reglages') }}">Réglages</a>{% endif %}</nav>
     <div class="moi">
       <span>{{ utilisateur.nom }} ({{ 'modification' if utilisateur.role == 'admin' else 'lecture seule' }})</span>
       <form method="post" action="{{ url_for('deconnexion') }}">

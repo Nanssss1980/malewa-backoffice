@@ -33,7 +33,7 @@ class Donnees:  # même interface que la version Supabase
             client_id = _nouvel_id()  # identifiant du client
             self.clients[client_id] = {"id": client_id, "prenom": prenom, "nom": nom, "entreprise": entreprise, "email": email, "telephone": None, "contact_prefere": None, "email_invalide": False, "adresse": None, "code_postal": None, "ville": None}  # fiche client
             demande_id = _nouvel_id()  # identifiant de la demande
-            self.demandes[demande_id] = {"id": demande_id, "client_id": client_id, "titre": titre, "source": source, "type_evenement": genre, "date_evenement": date, "horaire": None, "lieu": "Lausanne", "adultes": adultes, "enfants": enfants, "budget_indique": budget, "message_client": None, "notes_internes": None, "statut": statut, "recue_le": "2026-10-20T10:00:00+00:00"}  # fiche demande
+            self.demandes[demande_id] = {"id": demande_id, "client_id": client_id, "titre": titre, "source": source, "type_evenement": genre, "date_evenement": date, "horaire": None, "lieu": "Lausanne", "adultes": adultes, "enfants": enfants, "budget_indique": budget, "cout_total": None, "message_client": None, "notes_internes": None, "statut": statut, "recue_le": "2026-10-20T10:00:00+00:00"}  # fiche demande
 
     def connexion(self, email, mot_de_passe):  # vérifie les identifiants de démonstration
         compte = COMPTES.get((email or "").lower())  # cherche le compte
@@ -122,3 +122,103 @@ class Donnees:  # même interface que la version Supabase
 
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour un devis fictif
         self.devis_par_id[identifiant].update({**devis, "lignes": lignes})  # écrase
+
+    # ------------------------------------------------------------ stratégie
+    def _charger_strategie(self):  # charge le plan Excel (fichier JSON) la première fois seulement
+        if hasattr(self, "_actions"):  # déjà chargé
+            return  # rien à faire
+        import json  # lecture du fichier
+        import os  # chemin du fichier
+        chemin = os.path.join(os.path.dirname(os.path.abspath(__file__)), "strategie_donnees.json")  # à côté de ce fichier
+        with open(chemin, encoding="utf-8") as fichier:  # ouverture
+            contenu = json.load(fichier)  # lecture
+        self._actions = {}  # actions par identifiant
+        for action in contenu["actions"]:  # chaque action du plan
+            identifiant = _nouvel_id()  # identifiant unique
+            self._actions[identifiant] = {"id": identifiant, **action}  # enregistre
+        self._pistes = {}  # pistes par identifiant
+        for piste in contenu["pistes"]:  # chaque piste
+            identifiant = _nouvel_id()  # identifiant unique
+            self._pistes[identifiant] = {"id": identifiant, "personne": None, "lieu": None, "type_piste": None, "dates_info": None, "pourquoi": None, "conditions": None, "candidature": None, "lien_malewa": None, "email": None, "telephone": None, "contact_libre": None, "site": None, "dossier_envoye": None, "date_envoi": None, "prochaine_relance": None, "notes": None, "frais_fixes": None, "frais_pct": None, "ca_hors_devis": None, "couts_hors_devis": None, **piste}  # enregistre avec valeurs par défaut
+        self._journal = []  # entrées du journal
+        self._kpi = {"mois": {}, "cibles": {}}  # saisies à la main
+
+    def actions(self, jeton):  # actions dans l'ordre du plan
+        self._charger_strategie()  # charge si besoin
+        return sorted((dict(a) for a in self._actions.values()), key=lambda a: a["numero"] or 0)  # copies triées
+
+    def action(self, jeton, identifiant):  # une action
+        self._charger_strategie()  # charge si besoin
+        action = self._actions.get(identifiant)  # cherche
+        return dict(action) if action else None  # copie ou None
+
+    def creer_action(self, jeton, valeurs):  # ajoute une action
+        self._charger_strategie()  # charge si besoin
+        identifiant = _nouvel_id()  # identifiant unique
+        numero = max([a["numero"] or 0 for a in self._actions.values()] + [0]) + 1  # numéro suivant
+        self._actions[identifiant] = {"id": identifiant, "numero": numero, **valeurs}  # enregistre
+        return identifiant  # renvoie l'identifiant
+
+    def modifier_action(self, jeton, identifiant, valeurs):  # met à jour une action
+        self._actions[identifiant].update(valeurs)  # applique les changements
+
+    def pistes(self, jeton):  # pistes, P1 d'abord
+        self._charger_strategie()  # charge si besoin
+        return sorted((dict(p) for p in self._pistes.values()), key=lambda p: (p["priorite"], p["nom"].lower()))  # copies triées
+
+    def piste(self, jeton, identifiant):  # une piste
+        self._charger_strategie()  # charge si besoin
+        piste = self._pistes.get(identifiant) if identifiant else None  # cherche
+        return dict(piste) if piste else None  # copie ou None
+
+    def creer_piste(self, jeton, valeurs):  # ajoute une piste
+        self._charger_strategie()  # charge si besoin
+        identifiant = _nouvel_id()  # identifiant unique
+        self._pistes[identifiant] = {"id": identifiant, "personne": None, "lieu": None, "type_piste": None, "dates_info": None, "pourquoi": None, "conditions": None, "candidature": None, "lien_malewa": None, "email": None, "telephone": None, "contact_libre": None, "site": None, "dossier_envoye": None, "date_envoi": None, "prochaine_relance": None, "notes": None, "frais_fixes": None, "frais_pct": None, "ca_hors_devis": None, "couts_hors_devis": None, **valeurs}  # enregistre
+        return identifiant  # renvoie l'identifiant
+
+    def modifier_piste(self, jeton, identifiant, valeurs):  # met à jour une piste
+        self._pistes[identifiant].update(valeurs)  # applique les changements
+
+    def demandes_de_piste(self, jeton, piste_id):  # demandes issues d'une piste, avec leur CA signé
+        resultat = []  # liste à remplir
+        for demande in self.demandes.values():  # parcourt les demandes
+            if demande.get("piste_id") == piste_id:  # liée à cette piste
+                ca = sum(float(d.get("total_ht") or 0) for d in self.devis_par_id.values() if d["demande_id"] == demande["id"] and d["statut"] == "accepte")  # CA des devis acceptés
+                resultat.append({"id": demande["id"], "titre": demande["titre"], "statut": demande["statut"], "date_evenement": demande["date_evenement"], "type_evenement": demande["type_evenement"], "ca": ca})  # ligne
+        return resultat  # renvoie la liste
+
+    def journal(self, jeton, action_id=None, piste_id=None, limite=None):  # journal, récent d'abord
+        self._charger_strategie()  # charge si besoin
+        lignes = []  # liste à remplir
+        for entree in reversed(self._journal):  # du plus récent au plus ancien
+            if action_id and entree["action_id"] != action_id:  # autre action
+                continue  # ignore
+            if piste_id and entree["piste_id"] != piste_id:  # autre piste
+                continue  # ignore
+            copie = dict(entree)  # copie
+            action = self._actions.get(entree["action_id"])  # action liée
+            piste = self._pistes.get(entree["piste_id"])  # piste liée
+            copie["strategie_actions"] = {"id": action["id"], "numero": action["numero"], "action": action["action"]} if action else None  # nom de l'action
+            copie["strategie_pistes"] = {"id": piste["id"], "nom": piste["nom"]} if piste else None  # nom de la piste
+            lignes.append(copie)  # ajoute
+        return lignes[:limite] if limite else lignes  # applique la limite
+
+    def ajouter_journal(self, jeton, auteur, texte, action_id=None, piste_id=None):  # ajoute une entrée
+        self._charger_strategie()  # charge si besoin
+        self._journal.append({"id": _nouvel_id(), "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S+00:00"), "auteur": auteur, "texte": texte, "action_id": action_id, "piste_id": piste_id})  # enregistre
+
+    def kpi_donnees(self, jeton):  # demandes et devis pour les KPI
+        demandes = [{k: d.get(k) for k in ("id", "titre", "type_evenement", "statut", "recue_le", "date_evenement", "origine", "cout_total", "piste_id")} for d in self.demandes.values()]  # demandes
+        devis = [{k: d.get(k) for k in ("demande_id", "statut", "date_emission", "total_ht")} for d in self.devis_par_id.values()]  # devis
+        return demandes, devis  # les deux listes
+
+    def kpi_manuel(self, jeton):  # saisies à la main
+        self._charger_strategie()  # charge si besoin
+        return {"mois": dict(self._kpi["mois"]), "cibles": dict(self._kpi["cibles"])}  # copie
+
+    def sauver_kpi(self, jeton, mois, cibles):  # enregistre les saisies
+        self._charger_strategie()  # charge si besoin
+        for cle, valeurs in mois.items():  # un mois après l'autre
+            self._kpi["mois"].setdefault(cle, {}).update(valeurs)  # fusionne
+        self._kpi["cibles"].update(cibles)  # applique les cibles

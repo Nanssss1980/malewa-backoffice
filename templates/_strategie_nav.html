@@ -1,0 +1,7 @@
+<nav class="filtres" aria-label="Stratégie">
+  <a href="{{ url_for('strategie_accueil') }}" class="{{ 'actif' if actif == 'accueil' }}">Tableau de bord</a>
+  <a href="{{ url_for('strategie_actions') }}" class="{{ 'actif' if actif == 'actions' }}">Plan d'actions</a>
+  <a href="{{ url_for('strategie_pistes') }}" class="{{ 'actif' if actif == 'pistes' }}">Pistes</a>
+  <a href="{{ url_for('strategie_kpi') }}" class="{{ 'actif' if actif == 'kpi' }}">Suivi KPI</a>
+  <a href="{{ url_for('strategie_journal') }}" class="{{ 'actif' if actif == 'journal' }}">Journal</a>
+</nav>

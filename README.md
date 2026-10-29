@@ -12,6 +12,7 @@ Accès privé, sur invitation uniquement (3 comptes).
 - Devis : formulaire avec calculs en direct, TVA en option, services au tarif horaire ou au forfait, échéancier, texte d'introduction à cocher, fiche et modification
 - PDF du devis en 3 pages (lettre, détail, paiement), téléchargeable depuis la fiche du devis
 - Mode démo avec données fictives
+- Stratégie : plan d'actions 2027, pistes (festivals, wedding planners, salons, entreprises), suivi KPI en direct depuis les devis, journal de ce qui est entrepris, lien demande vers piste, coûts par événement, bilan et frais d'inscription par piste, charges fixes et seuil de rentabilité, rappels « À compléter »
 
 ## Stack
 
@@ -28,6 +29,8 @@ Accès privé, sur invitation uniquement (3 comptes).
 | `donnees_demo.py` | Données fictives pour tester sans base |
 | `calcul.py` | Calculs du devis (lignes, TVA, acomptes), avec des Decimal pour des montants exacts |
 | `pdf_devis.py` | PDF du devis en 3 pages (ReportLab, sans programme système), polices dans `polices/` |
+| `strategie.py` | Listes de choix et calcul des KPI (demandes, devis, CA par axe, origine) |
+| `strategie_donnees.json` | Plan d'actions et pistes de l'Excel, utilisés par le mode démo |
 | `phrases.py` | Phrases proposées pour la lettre du devis |
 | `templates/` | Pages HTML |
 | `static/` | Style, logo, polices (hébergées ici, aucun service externe) |

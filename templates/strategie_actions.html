@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Plan d'actions{% endblock %}
+{% block contenu %}
+{% set actif = 'actions' %}
+<div class="entete">
+  <h1>Plan d'actions</h1>
+  {% if utilisateur.role == 'admin' %}<a class="btn" href="{{ url_for('nouvelle_action') }}">Nouvelle action</a>{% endif %}
+</div>
+{% include "_strategie_nav.html" %}
+<form method="get" class="filtres-form" aria-label="Filtrer les actions">
+  <label>Axe<select name="axe"><option value="">Tous</option>{% for code, nom in axes %}<option value="{{ code }}" {{ 'selected' if axe == code }}>{{ nom }}</option>{% endfor %}</select></label>
+  <label>Statut<select name="statut"><option value="">Tous</option>{% for code, nom in statuts %}<option value="{{ code }}" {{ 'selected' if statut == code }}>{{ nom }}</option>{% endfor %}</select></label>
+  <label>Priorité<select name="priorite"><option value="">Toutes</option>{% for code, nom in priorites %}<option value="{{ code }}" {{ 'selected' if priorite == code }}>{{ nom }}</option>{% endfor %}</select></label>
+  <label class="case"><input type="checkbox" name="retard" value="1" {{ 'checked' if retard }}> En retard seulement</label>
+  <button class="btn secondaire" type="submit">Filtrer</button>
+</form>
+<div class="carte defile">
+  {% if actions %}
+  <table class="tableau">
+    <thead><tr><th>N°</th><th>Échéance</th><th>Action</th><th>Axe</th><th>Priorité</th><th>Responsable</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for a in actions %}
+      <tr>
+        <td>{{ a.numero }}</td>
+        <td>{{ a.echeance|date_fr }}{% if a.retard %}<br><span class="pill refuse">En retard</span>{% endif %}</td>
+        <td><a href="{{ url_for('fiche_action', identifiant=a.id) }}"><strong>{{ a.action }}</strong></a></td>
+        <td>{{ LIBELLE_AXE[a.axe] }}</td>
+        <td>{{ a.priorite }}</td>
+        <td>{{ a.responsable or '' }}</td>
+        <td><span class="pill {{ 'accepte' if a.statut == 'fait' else ('devis_envoye' if a.statut == 'en_cours' else ('annule' if a.statut == 'abandonne' else '')) }}">{{ LIBELLE_STATUT_ACTION[a.statut] }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>Aucune action pour ce filtre.</p>{% endif %}
+</div>
+{% endblock %}

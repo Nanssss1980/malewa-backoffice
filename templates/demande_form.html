@@ -27,11 +27,15 @@
       <label>Adultes<input type="number" min="0" name="adultes" value="{{ valeurs.get('adultes', '') }}"></label>
       <label>Enfants<input type="number" min="0" name="enfants" value="{{ valeurs.get('enfants', '') }}"></label>
       <label>Budget indiqué par le client (facultatif, CHF)<input name="budget_indique" value="{{ valeurs.get('budget_indique', '') }}" inputmode="decimal"></label>
+      <label>Coûts réels de l'événement (facultatif, CHF, hors taxes)<input name="cout_total" value="{{ valeurs.get('cout_total', '') }}" inputmode="decimal"></label>
       <label>Source de la demande
         <select name="source">{% for code, nom in sources %}<option value="{{ code }}" {{ 'selected' if valeurs.get('source') == code }}>{{ nom }}</option>{% endfor %}</select>
       </label>
       <label>Comment nous a-t-il connus ?
         <select name="origine">{% for code, nom in ORIGINES %}<option value="{{ code }}" {{ 'selected' if (valeurs.get('origine') or '') == code }}>{{ nom }}</option>{% endfor %}</select>
+      </label>
+      <label>Piste d'où vient la demande (facultatif)
+        <select name="piste_id"><option value="">Aucune</option>{% for p in pistes_choix() %}<option value="{{ p.id }}" {{ 'selected' if (valeurs.get('piste_id') or '') == p.id }}>{{ LIBELLE_CATEGORIE[p.categorie] }} · {{ p.nom }}</option>{% endfor %}</select>
       </label>
     </div>
     <p></p>

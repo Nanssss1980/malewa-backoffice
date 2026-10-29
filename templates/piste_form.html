@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre_page }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <h1>{{ titre_page }}</h1>
+  <a href="{{ url_for('fiche_piste', identifiant=identifiant) if identifiant else url_for('strategie_pistes') }}">Annuler</a>
+</div>
+{% if erreurs %}<div class="message erreur" role="alert"><strong>À corriger :</strong><ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" class="formulaire">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <section class="carte">
+    <h2>La piste</h2>
+    <div class="grille">
+      <label>Nom<input name="nom" value="{{ valeurs.get('nom', '') }}" required></label>
+      <label>Liste<select name="categorie">{% for code, nom in categories %}<option value="{{ code }}" {{ 'selected' if valeurs.get('categorie') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Priorité<select name="priorite">{% for code, nom in priorites %}<option value="{{ code }}" {{ 'selected' if valeurs.get('priorite') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Statut<select name="statut">{% for code, nom in statuts %}<option value="{{ code }}" {{ 'selected' if valeurs.get('statut') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Personne de contact<input name="personne" value="{{ valeurs.get('personne', '') }}"></label>
+      <label>Lieu / base<input name="lieu" value="{{ valeurs.get('lieu', '') }}"></label>
+      <label>Type<input name="type_piste" value="{{ valeurs.get('type_piste', '') }}"></label>
+      <label>Dates / info<input name="dates_info" value="{{ valeurs.get('dates_info', '') }}"></label>
+    </div>
+    <p></p>
+    <label>Pourquoi pour Malewa<textarea name="pourquoi" rows="3">{{ valeurs.get('pourquoi', '') }}</textarea></label>
+    <p></p>
+    <label>Lien avec Malewa<textarea name="lien_malewa" rows="2">{{ valeurs.get('lien_malewa', '') }}</textarea></label>
+    <p></p>
+    <label>Conditions connues<textarea name="conditions" rows="3">{{ valeurs.get('conditions', '') }}</textarea></label>
+    <p></p>
+    <label>Comment candidater<textarea name="candidature" rows="2">{{ valeurs.get('candidature', '') }}</textarea></label>
+  </section>
+  <section class="carte">
+    <h2>Contact</h2>
+    <div class="grille">
+      <label>E-mail<input type="email" name="email" value="{{ valeurs.get('email', '') }}"></label>
+      <label>Téléphone<input name="telephone" value="{{ valeurs.get('telephone', '') }}"></label>
+      <label>Autre contact<input name="contact_libre" value="{{ valeurs.get('contact_libre', '') }}"></label>
+      <label>Site / source (https://…)<input name="site" value="{{ valeurs.get('site', '') }}" inputmode="url"></label>
+    </div>
+  </section>
+  <section class="carte">
+    <h2>Bilan financier (facultatif, CHF)</h2>
+    <p class="libelle">Pour savoir si la piste rapporte plus qu'elle ne coûte. Exemple, Geneva Street Food Festival : frais fixes 2700, part du CA 12.</p>
+    <div class="grille">
+      <label>Frais d'inscription fixes (stand, taxe)<input name="frais_fixes" value="{{ valeurs.get('frais_fixes', '') }}" inputmode="decimal"></label>
+      <label>Part du CA reversée à l'organisateur (%)<input name="frais_pct" value="{{ valeurs.get('frais_pct', '') }}" inputmode="decimal"></label>
+      <label>Ventes sur place, hors devis<input name="ca_hors_devis" value="{{ valeurs.get('ca_hors_devis', '') }}" inputmode="decimal"></label>
+      <label>Coûts du stand (marchandises, personnel)<input name="couts_hors_devis" value="{{ valeurs.get('couts_hors_devis', '') }}" inputmode="decimal"></label>
+    </div>
+  </section>
+  <section class="carte">
+    <h2>Suivi</h2>
+    <div class="grille">
+      <label>Dossier envoyé<select name="dossier_envoye">{% for code, nom in dossiers %}<option value="{{ code }}" {{ 'selected' if (valeurs.get('dossier_envoye') or '') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Date d'envoi<input type="date" name="date_envoi" value="{{ valeurs.get('date_envoi', '') }}"></label>
+      <label>Prochaine relance<input type="date" name="prochaine_relance" value="{{ valeurs.get('prochaine_relance', '') }}"></label>
+    </div>
+    <p></p>
+    <label>Notes<textarea name="notes" rows="3">{{ valeurs.get('notes', '') }}</textarea></label>
+  </section>
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+{% endblock %}

@@ -101,7 +101,7 @@ class Donnees:  # regroupe tous les échanges avec la base
         self._client(jeton).table("reglages").update(self._json(valeurs)).eq("id", 1).execute()  # mise à jour
 
     def devis_de_demande(self, jeton, demande_id):  # liste des devis d'une demande, du plus récent au plus ancien
-        return self._client(jeton).table("devis").select("id, numero, version, statut, date_emission, total_ttc").eq("demande_id", demande_id).order("cree_le", desc=True).execute().data  # lecture
+        return self._client(jeton).table("devis").select("id, numero, version, statut, date_emission, total_ttc, total_ht").eq("demande_id", demande_id).order("cree_le", desc=True).execute().data  # lecture
 
     def devis(self, jeton, identifiant):  # un devis complet : lignes, demande et client
         base = self._client(jeton)  # connexion avec les droits de la personne
@@ -136,3 +136,73 @@ class Donnees:  # regroupe tous les échanges avec la base
         base.table("devis").update(self._json(devis)).eq("id", identifiant).execute()  # met à jour le devis
         base.table("devis_lignes").delete().eq("devis_id", identifiant).execute()  # retire les anciennes lignes
         self._ecrire_lignes(base, identifiant, lignes)  # écrit les nouvelles lignes
+
+    # ------------------------------------------------------------ stratégie
+    def actions(self, jeton):  # toutes les actions du plan, dans l'ordre du plan
+        liste = self._client(jeton).table("strategie_actions").select("*").execute().data  # lecture
+        liste.sort(key=lambda a: a["numero"] or 0)  # ordre des numéros
+        return liste  # renvoie la liste
+
+    def action(self, jeton, identifiant):  # une action (None si introuvable)
+        reponse = self._client(jeton).table("strategie_actions").select("*").eq("id", identifiant).execute()  # lecture
+        return reponse.data[0] if reponse.data else None  # action ou None
+
+    def creer_action(self, jeton, valeurs):  # ajoute une action et renvoie son identifiant
+        return self._client(jeton).table("strategie_actions").insert(valeurs).execute().data[0]["id"]  # insertion
+
+    def modifier_action(self, jeton, identifiant, valeurs):  # met à jour une action
+        self._client(jeton).table("strategie_actions").update(valeurs).eq("id", identifiant).execute()  # mise à jour
+
+    def pistes(self, jeton):  # toutes les pistes (festivals, planners, salons, entreprises)
+        liste = self._client(jeton).table("strategie_pistes").select("*").execute().data  # lecture
+        liste.sort(key=lambda p: (p["priorite"], p["nom"].lower()))  # P1 d'abord, puis ordre alphabétique
+        return liste  # renvoie la liste
+
+    def piste(self, jeton, identifiant):  # une piste (None si introuvable ou identifiant vide)
+        if not identifiant:  # rien à chercher
+            return None  # pas de piste
+        reponse = self._client(jeton).table("strategie_pistes").select("*").eq("id", identifiant).execute()  # lecture
+        return reponse.data[0] if reponse.data else None  # piste ou None
+
+    def creer_piste(self, jeton, valeurs):  # ajoute une piste et renvoie son identifiant
+        return self._client(jeton).table("strategie_pistes").insert(valeurs).execute().data[0]["id"]  # insertion
+
+    def modifier_piste(self, jeton, identifiant, valeurs):  # met à jour une piste
+        self._client(jeton).table("strategie_pistes").update(valeurs).eq("id", identifiant).execute()  # mise à jour
+
+    def demandes_de_piste(self, jeton, piste_id):  # demandes issues d'une piste, avec le CA de leurs devis acceptés
+        demandes = self._client(jeton).table("demandes").select("id, titre, statut, date_evenement, type_evenement").eq("piste_id", piste_id).execute().data  # demandes liées
+        for demande in demandes:  # ajoute le CA signé de chaque demande
+            devis = self._client(jeton).table("devis").select("total_ht").eq("demande_id", demande["id"]).eq("statut", "accepte").execute().data  # devis acceptés
+            demande["ca"] = sum(Decimal(str(d["total_ht"] or 0)) for d in devis)  # somme hors taxes
+        return demandes  # renvoie la liste
+
+    def journal(self, jeton, action_id=None, piste_id=None, limite=None):  # entrées du journal, les plus récentes d'abord
+        requete = self._client(jeton).table("strategie_journal").select("*, strategie_actions(id, numero, action), strategie_pistes(id, nom)").order("cree_le", desc=True)  # lecture + noms liés
+        if action_id:  # filtre sur une action
+            requete = requete.eq("action_id", action_id)  # garde cette action
+        if piste_id:  # filtre sur une piste
+            requete = requete.eq("piste_id", piste_id)  # garde cette piste
+        if limite:  # limite le nombre de lignes
+            requete = requete.limit(limite)  # applique la limite
+        return requete.execute().data  # exécute
+
+    def ajouter_journal(self, jeton, auteur, texte, action_id=None, piste_id=None):  # ajoute une ligne au journal
+        self._client(jeton).table("strategie_journal").insert({"auteur": auteur, "texte": texte, "action_id": action_id, "piste_id": piste_id}).execute()  # insertion
+
+    def kpi_donnees(self, jeton):  # demandes et devis nécessaires au calcul des KPI
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        demandes = base.table("demandes").select("id, titre, type_evenement, statut, recue_le, date_evenement, origine, cout_total, piste_id").execute().data  # demandes
+        devis = base.table("devis").select("demande_id, statut, date_emission, total_ht").execute().data  # devis
+        return demandes, devis  # les deux listes
+
+    def kpi_manuel(self, jeton):  # chiffres saisis à la main et cibles
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        mois = {ligne["mois"][:7]: ligne for ligne in base.table("strategie_kpi_mois").select("*").execute().data}  # clé AAAA-MM
+        cibles = {ligne["axe"]: ligne["cible"] for ligne in base.table("strategie_cibles").select("*").execute().data}  # cibles par axe
+        return {"mois": mois, "cibles": cibles}  # dictionnaire des saisies
+
+    def sauver_kpi(self, jeton, mois, cibles):  # enregistre les saisies mensuelles et les cibles (créées ou mises à jour)
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        base.table("strategie_kpi_mois").upsert([{"mois": cle + "-01", **self._json(valeurs)} for cle, valeurs in mois.items()], on_conflict="mois").execute()  # une ligne par mois
+        base.table("strategie_cibles").upsert([{"axe": axe, "cible": float(cible) if cible is not None else None} for axe, cible in cibles.items()], on_conflict="axe").execute()  # une ligne par axe

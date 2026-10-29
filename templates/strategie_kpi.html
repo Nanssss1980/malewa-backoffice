@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block titre %}Suivi KPI{% endblock %}
+{% block contenu %}
+{% set actif = 'kpi' %}
+{% set admin = utilisateur.role == 'admin' %}
+<div class="entete"><h1>Suivi KPI</h1></div>
+{% include "_strategie_nav.html" %}
+<p class="libelle">Calcul en direct depuis les demandes et les devis. Demandes : mois de réception. Devis envoyés et signés : mois d'émission du devis. CA : montant hors taxes des devis acceptés, au mois de l'événement. Les colonnes avec une case se saisissent à la main (hors devis).</p>
+<form method="post" class="formulaire">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <section class="carte defile">
+    <h2>Mois par mois</h2>
+    <table class="tableau kpi">
+      <thead><tr><th>Mois</th><th>Demandes</th><th>Devis envoyés</th><th>Devis signés</th><th>Taux</th><th>CA Mariages</th><th>CA Festivals</th><th>CA Privé & entr.</th><th>CA Commande simple</th><th>CA Pop-up</th><th>CA autre</th><th>CA total</th><th>Dont acompte reçu</th><th>Avis Google</th></tr></thead>
+      <tbody>
+      {% for l in kpi.lignes %}
+        {% set saisie = manuel.mois.get(l.mois, {}) %}
+        <tr>
+          <td><strong>{{ l.libelle }}</strong></td>
+          <td>{{ l.demandes }}</td><td>{{ l.devis_envoyes }}</td><td>{{ l.devis_signes }}</td>
+          <td>{{ l.taux|pct if l.taux is not none else '' }}</td>
+          <td>{{ l.ca.mariages|chf }}</td><td>{{ l.ca.festivals|chf }}</td><td>{{ l.ca.prive_entreprise|chf }}</td>
+          <td>{% if admin %}<input name="cs_{{ l.mois }}" value="{{ saisie.get('ca_commande_simple')|saisie }}" inputmode="decimal" aria-label="CA commande simple {{ l.libelle }}">{% else %}{{ l.ca.commande_simple|chf }}{% endif %}</td>
+          <td>{% if admin %}<input name="pu_{{ l.mois }}" value="{{ saisie.get('ca_popup')|saisie }}" inputmode="decimal" aria-label="CA pop-up {{ l.libelle }}">{% else %}{{ l.ca.popup|chf }}{% endif %}</td>
+          <td>{{ l.ca_autre|chf }}</td>
+          <td><strong>{{ l.ca_total|chf }}</strong></td>
+          <td>{{ l.ca_paye|chf }}</td>
+          <td>{{ l.marge|chf if l.ca_cout else '' }}</td>
+          <td>{% if admin %}<input name="ch_{{ l.mois }}" value="{{ saisie.get('charges_fixes')|saisie }}" inputmode="decimal" aria-label="Charges fixes {{ l.libelle }}">{% else %}{{ l.charges|chf if l.charges else '' }}{% endif %}</td>
+          <td>{% if admin %}<input name="avis_{{ l.mois }}" value="{{ saisie.get('avis_google') if saisie.get('avis_google') is not none else '' }}" inputmode="numeric" aria-label="Avis Google {{ l.libelle }}">{% else %}{{ l.avis_google if l.avis_google is not none else '' }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+        <tr class="total">
+          <td>Total 2027</td><td>{{ kpi.total.demandes }}</td><td>{{ kpi.total.devis_envoyes }}</td><td>{{ kpi.total.devis_signes }}</td><td>{{ kpi.total.taux|pct if kpi.total.taux is not none else '' }}</td>
+          <td>{{ kpi.total.ca.mariages|chf }}</td><td>{{ kpi.total.ca.festivals|chf }}</td><td>{{ kpi.total.ca.prive_entreprise|chf }}</td><td>{{ kpi.total.ca.commande_simple|chf }}</td><td>{{ kpi.total.ca.popup|chf }}</td><td>{{ kpi.total.ca_autre|chf }}</td><td>{{ kpi.total.ca_total|chf }}</td><td>{{ kpi.total.ca_paye|chf }}</td><td>{{ kpi.total.marge|chf if kpi.total.ca_cout else '' }}</td><td>{{ kpi.total.charges|chf if kpi.total.charges else '' }}</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  {% if admin %}
+  <section class="carte">
+    <h2>Charges fixes</h2>
+    <label>Même montant pour tous les mois (CHF) : loyer, assurances, comptabilité<input name="charges_toutes" inputmode="decimal" placeholder="Laisser vide pour garder les montants ci-dessus"></label>
+    <p class="libelle">Un mois avec son propre montant garde ce montant. Les mois vides prennent le montant commun.</p>
+  </section>
+  {% endif %}
+  <section class="carte">
+    <h2>Rentabilité 2027</h2>
+    <div class="tuiles">
+      <div class="tuile"><span class="libelle">Marge (coûts saisis)</span><strong>{{ kpi.total.marge|chf if kpi.total.ca_cout else 'À saisir' }}</strong><span class="libelle">{{ kpi.total.taux_marge|pct if kpi.total.taux_marge is not none else 'Saisis les coûts des événements' }}</span></div>
+      <div class="tuile"><span class="libelle">Charges fixes 2027</span><strong>{{ kpi.total.charges|chf if kpi.total.charges else 'À saisir' }}</strong></div>
+      <div class="tuile"><span class="libelle">Résultat estimé</span><strong>{{ kpi.total.resultat|chf if kpi.total.ca_cout else 'À calculer' }}</strong><span class="libelle">marge moins charges fixes</span></div>
+      <div class="tuile"><span class="libelle">Seuil de rentabilité</span><strong>{{ kpi.total.seuil|chf if kpi.total.seuil is not none else 'À calculer' }}</strong><span class="libelle">{% if kpi.total.seuil is not none %}CA à signer · déjà signé : {{ kpi.total.ca_total|chf }} ({{ (kpi.total.ca_total / kpi.total.seuil * 100)|pct }}){% else %}il faut des coûts et des charges{% endif %}</span></div>
+    </div>
+    <p class="libelle">Estimation : le seuil suppose que la marge moyenne des événements saisis vaut pour tous les autres.</p>
+  </section>
+  <section class="carte defile">
+    <h2>Cibles de CA 2027 (hors taxes)</h2>
+    <table class="tableau">
+      <thead><tr><th>Axe</th><th>Cible 2027</th><th>Réalisé 2027</th><th>Écart</th><th>% atteint</th></tr></thead>
+      <tbody>
+      {% for o in kpi.objectifs %}
+        <tr>
+          <td>{{ o.libelle }}</td>
+          <td>{% if admin %}<input name="cible_{{ o.axe }}" value="{{ o.cible|saisie }}" inputmode="decimal" aria-label="Cible {{ o.libelle }}">{% else %}{{ o.cible|chf if o.cible is not none else 'Non fixée' }}{% endif %}</td>
+          <td>{{ o.realise|chf }}</td><td>{{ o.ecart|chf if o.ecart is not none else '' }}</td><td>{{ o.pourcent|pct if o.pourcent is not none else '' }}</td>
+        </tr>
+      {% endfor %}
+        <tr class="total"><td>Total</td><td>{{ kpi.cible_totale|chf if kpi.cible_totale else 'Non fixée' }}</td><td>{{ kpi.total.ca_total|chf }}</td><td></td><td>{{ kpi.pourcent_total|pct if kpi.pourcent_total is not none else '' }}</td></tr>
+      </tbody>
+    </table>
+    <p class="libelle">Les cibles se fixent après le bilan chiffré 2026 (action 2 du plan).</p>
+  </section>
+  {% if admin %}<div class="actions"><button class="btn" type="submit">Enregistrer les saisies</button></div>{% endif %}
+</form>
+<section class="carte defile">
+  <h2>Par origine de la demande</h2>
+  {% if origines %}
+  <table class="tableau">
+    <thead><tr><th>Origine</th><th>Demandes</th><th>Signées</th><th>CA signé (HT)</th></tr></thead>
+    <tbody>{% for o in origines %}<tr><td>{{ o.libelle }}</td><td>{{ o.demandes }}</td><td>{{ o.signees }}</td><td>{{ o.ca|chf }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<p>Aucune demande pour l'instant.</p>{% endif %}
+</section>
+<section class="carte defile">
+  <h2>Par type d'événement</h2>
+  {% if types_stats %}
+  <table class="tableau">
+    <thead><tr><th>Type</th><th>Demandes</th><th>Devis envoyés</th><th>Devis signés</th><th>Taux de signature</th><th>CA signé (HT)</th><th>Panier moyen (HT)</th><th>Coûts saisis</th><th>Marge</th><th>Marge en %</th></tr></thead>
+    <tbody>{% for t in types_stats %}<tr><td>{{ t.libelle }}</td><td>{{ t.demandes }}</td><td>{{ t.devis_envoyes }}</td><td>{{ t.devis_signes }}</td><td>{{ t.taux|pct if t.taux is not none else '' }}</td><td>{{ t.ca|chf }}</td><td>{{ t.panier|chf if t.panier is not none else '' }}</td><td>{{ t.couts|chf if t.evenements_avec_couts else '' }}{% if t.evenements_avec_couts %}<br><span class="libelle">{{ t.evenements_avec_couts }} sur {{ t.devis_signes }}</span>{% endif %}</td><td>{{ t.marge|chf if t.marge is not none else '' }}</td><td>{{ t.marge_pct|pct if t.marge_pct is not none else '' }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <p class="libelle">La marge ne compte que les événements dont les coûts sont saisis dans la demande (« 2 sur 3 » = 2 événements signés sur 3).</p>
+  {% else %}<p>Aucune demande pour l'instant.</p>{% endif %}
+</section>
+{% endblock %}

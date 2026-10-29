@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block titre %}{{ piste.nom }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div><a href="{{ url_for('strategie_pistes', categorie=piste.categorie) }}">&larr; {{ LIBELLE_CATEGORIE[piste.categorie] }}</a><h1>{{ piste.nom }}</h1></div>
+  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_piste', identifiant=piste.id) }}">Modifier</a>{% endif %}
+</div>
+<div class="statuts" role="group" aria-label="Statut de la piste">
+  {% for code, nom in statuts %}
+    {% if utilisateur.role == 'admin' %}
+      <form method="post" action="{{ url_for('statut_piste', identifiant=piste.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="statut" value="{{ code }}"><button type="submit" class="{{ 'courant' if piste.statut == code }}">{{ nom }}</button></form>
+    {% else %}<span class="pill {{ 'nouvelle' if piste.statut == code }}">{{ nom }}</span>{% endif %}
+  {% endfor %}
+</div>
+<div class="deux">
+  <section class="carte gauche">
+    <h2>La piste</h2>
+    <div class="grille">
+      <div><div class="libelle">Priorité</div><div class="valeur">{{ piste.priorite }}</div></div>
+      {% if piste.personne %}<div><div class="libelle">Personne</div><div class="valeur">{{ piste.personne }}</div></div>{% endif %}
+      {% if piste.lieu %}<div><div class="libelle">Lieu</div><div class="valeur">{{ piste.lieu }}</div></div>{% endif %}
+      {% if piste.type_piste %}<div><div class="libelle">Type</div><div class="valeur">{{ piste.type_piste }}</div></div>{% endif %}
+      {% if piste.dates_info %}<div><div class="libelle">Dates / info</div><div class="valeur">{{ piste.dates_info }}</div></div>{% endif %}
+      <div><div class="libelle">Prochaine relance</div><div class="valeur">{{ piste.prochaine_relance|date_fr if piste.prochaine_relance else 'Non fixée' }}</div></div>
+    </div>
+    {% if piste.pourquoi %}<p></p><div class="libelle">Pourquoi pour Malewa</div><div class="menu">{{ piste.pourquoi }}</div>{% endif %}
+    {% if piste.lien_malewa %}<p></p><div class="libelle">Lien avec Malewa</div><div class="menu">{{ piste.lien_malewa }}</div>{% endif %}
+    {% if piste.conditions %}<p></p><div class="libelle">Conditions connues</div><div class="menu">{{ piste.conditions }}</div>{% endif %}
+    {% if piste.candidature %}<p></p><div class="libelle">Comment candidater</div><div class="menu">{{ piste.candidature }}</div>{% endif %}
+    {% if piste.notes %}<p></p><div class="libelle">Notes</div><div class="menu">{{ piste.notes }}</div>{% endif %}
+  </section>
+  <div class="droite">
+    <section class="carte">
+      <h2>Contact</h2>
+      <div class="menu">
+        {% if piste.email %}<a href="mailto:{{ piste.email }}">{{ piste.email }}</a>{% endif %}
+        {% if piste.telephone %}<br>{{ piste.telephone }}{% endif %}
+        {% if piste.contact_libre %}<br>{{ piste.contact_libre }}{% endif %}
+        {% if piste.site %}<br><a href="{{ piste.site }}" target="_blank" rel="noopener noreferrer">Site / source</a>{% endif %}
+        {% if not (piste.email or piste.telephone or piste.contact_libre or piste.site) %}<span class="libelle">Aucun contact renseigné.</span>{% endif %}
+      </div>
+    </section>
+    <section class="carte">
+      <h2>Dossier envoyé</h2>
+      <div class="valeur">{{ LIBELLE_DOSSIER[piste.dossier_envoye] if piste.dossier_envoye else 'Aucun pour l\'instant' }}</div>
+      {% if piste.date_envoi %}<div class="libelle">Envoyé le {{ piste.date_envoi|date_fr }}</div>{% endif %}
+      {% if conseille and not piste.dossier_envoye %}<p class="libelle">Dossier conseillé : {{ LIBELLE_DOSSIER[conseille] }}.</p>{% endif %}
+    </section>
+    <section class="carte">
+      <h2>Bilan de la piste</h2>
+      {% if bilan %}
+      <dl class="bilan">
+        <dt>CA signé par devis (HT)</dt><dd>{{ bilan.ca_devis|chf }}</dd>
+        {% if bilan.ca_hors_devis %}<dt>Ventes sur place</dt><dd>{{ bilan.ca_hors_devis|chf }}</dd>{% endif %}
+        <dt>Coûts</dt><dd>&minus; {{ bilan.couts|chf }}</dd>
+        <dt>Frais d'inscription</dt><dd>&minus; {{ bilan.frais|chf }}</dd>
+        <dt class="resultat">Résultat</dt><dd class="resultat">{{ bilan.resultat|chf }}</dd>
+      </dl>
+      <span class="pill {{ 'accepte' if bilan.resultat > 0 else 'refuse' }}">{{ 'Rentable' if bilan.resultat > 0 else 'Non rentable' }}</span>
+      {% if bilan.frais_pct_montant %}<p class="libelle">Dont part du CA reversée : {{ bilan.frais_pct_montant|chf }}.</p>{% endif %}
+      {% else %}<p class="libelle">Rien de saisi. Ajoute les frais d'inscription, les ventes ou les coûts dans « Modifier ».</p>{% endif %}
+    </section>
+    <section class="carte">
+      <h2>Demandes issues de cette piste</h2>
+      {% if demandes %}
+      <ul class="liste">{% for d in demandes %}<li><a href="{{ url_for('fiche_demande', identifiant=d.id) }}">{{ d.titre }}</a> <span class="libelle">{{ LIBELLE_STATUT[d.statut] }}{% if d.ca %} · {{ d.ca|chf }} signés{% endif %}</span></li>{% endfor %}</ul>
+      <p class="valeur">CA signé : {{ ca_total|chf }}</p>
+      {% else %}<p class="libelle">Aucune demande liée. Dans une demande, choisis cette piste dans « Piste d'où vient la demande ».</p>{% endif %}
+    </section>
+  </div>
+</div>
+<section class="carte">
+  <h2>Journal de la piste</h2>
+  {% if utilisateur.role == 'admin' %}
+  <form method="post" action="{{ url_for('note_piste', identifiant=piste.id) }}" class="formulaire">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label>Qu'as-tu fait ? (appel, e-mail envoyé, réponse reçue)<textarea name="note" rows="3" maxlength="1000" required></textarea></label>
+    <div class="actions"><button class="btn" type="submit">Ajouter au journal</button></div>
+  </form>
+  {% endif %}
+  {% include "_journal.html" %}
+</section>
+{% endblock %}
