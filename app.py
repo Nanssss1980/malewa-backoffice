@@ -458,6 +458,26 @@ def changer_statut_devis(identifiant):  # enregistre le statut du devis et fait 
     return redirect(url_for("fiche_devis", identifiant=identifiant))  # retour à la fiche du devis
 
 
+STATUTS_SUPPRIMABLES = ("brouillon", "refuse", "remplace")  # un devis envoyé ou accepté ne se supprime pas : on le remet d'abord en brouillon
+
+
+@app.route("/devis/<identifiant>/supprimer", methods=["GET", "POST"])  # suppression d'un devis (page de confirmation puis suppression)
+@admin_requis  # réservée aux admins
+def supprimer_devis(identifiant):  # demande confirmation, puis supprime le devis et ses lignes
+    devis = db.devis(jeton(), identifiant)  # lit le devis avec sa demande
+    if not devis:  # introuvable
+        abort(404)  # page introuvable
+    if devis["statut"] not in STATUTS_SUPPRIMABLES:  # envoyé ou accepté : trop risqué
+        flash("Un devis envoyé ou accepté ne peut pas être supprimé. Remettez-le d'abord en brouillon si c'est une erreur.", "erreur")  # explication
+        return redirect(url_for("fiche_devis", identifiant=identifiant))  # retour à la fiche
+    demande = devis["demandes"]  # demande liée
+    if request.method == "POST":  # confirmation reçue
+        db.supprimer_devis(jeton(), identifiant)  # supprime les lignes puis le devis
+        flash(f"Devis {devis['numero']} supprimé.", "ok")  # confirmation
+        return redirect(url_for("fiche_demande", identifiant=demande["id"]))  # retour à la demande
+    return render_template("devis_supprimer.html", devis=devis, demande=demande)  # page de confirmation
+
+
 def echeances(devis):  # calcule les deux acomptes et le solde d'un devis enregistré (le solde est le reste exact)
     total = Decimal(str(devis["total_ttc"]))  # total à payer
     p1 = Decimal(str(devis["pourcentage_acompte_1"]))  # pourcentage du premier acompte

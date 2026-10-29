@@ -7,7 +7,7 @@
     <h1>Devis {{ devis.numero }}</h1>
     <p class="libelle">{{ client|nom_client }} &middot; émis le {{ devis.date_emission|date_fr }} &middot; version {{ devis.version }} &middot; <span class="pill">{{ STATUTS_DEVIS.get(devis.statut, devis.statut) }}</span></p>
   </div>
-  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_devis', identifiant=devis.id) }}">Modifier</a>{% endif %}
+  {% if utilisateur.role == 'admin' %}<div class="actions-entete"><a class="btn secondaire" href="{{ url_for('modifier_devis', identifiant=devis.id) }}">Modifier</a> <a class="btn secondaire" href="{{ url_for('supprimer_devis', identifiant=devis.id) }}">Supprimer</a></div>{% endif %}
 </div>
 
 <div class="statuts" role="group" aria-label="Statut du devis">

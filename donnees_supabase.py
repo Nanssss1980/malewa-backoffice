@@ -134,6 +134,11 @@ class Donnees:  # regroupe tous les échanges avec la base
             raise  # l'erreur remonte
         return identifiant  # identifiant du devis
 
+    def supprimer_devis(self, jeton, identifiant):  # supprime un devis et ses lignes
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        base.table("devis_lignes").delete().eq("devis_id", identifiant).execute()  # retire d'abord les lignes
+        base.table("devis").delete().eq("id", identifiant).execute()  # puis le devis
+
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour le devis et remplace ses lignes
         base = self._client(jeton)  # connexion avec les droits de la personne
         base.table("devis").update(self._json(devis)).eq("id", identifiant).execute()  # met à jour le devis

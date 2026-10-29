@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer le devis {{ devis.numero }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('fiche_devis', identifiant=devis.id) }}">&larr; Devis {{ devis.numero }}</a>
+    <h1>Supprimer le devis {{ devis.numero }} ?</h1>
+  </div>
+</div>
+<section class="carte">
+  <p>Devis de <strong>{{ demande.titre }}</strong>, statut <strong>{{ STATUTS_DEVIS.get(devis.statut, devis.statut) }}</strong>, total {{ devis.total_ht|chf2 }} hors taxes.</p>
+  <p>Cette action est définitive : le devis et toutes ses lignes disparaissent. Son numéro ne sera pas réutilisé.</p>
+  <p class="libelle">Si le devis est faux mais le client le connaît déjà, préférez créer une nouvelle version ou le passer en « Refusé ». Le statut de la demande ne change pas : pensez à le corriger si besoin.</p>
+  <form method="post" class="actions-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button type="submit" class="btn">Oui, supprimer ce devis</button>
+    <a class="btn secondaire" href="{{ url_for('fiche_devis', identifiant=devis.id) }}">Annuler</a>
+  </form>
+</section>
+{% endblock %}

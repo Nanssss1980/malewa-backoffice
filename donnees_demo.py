@@ -123,6 +123,9 @@ class Donnees:  # même interface que la version Supabase
     def changer_statut_devis(self, jeton, identifiant, statut):  # change le statut d'un devis fictif
         self.devis_par_id[identifiant]["statut"] = statut  # écrit le statut
 
+    def supprimer_devis(self, jeton, identifiant):  # supprime un devis fictif
+        self.devis_par_id.pop(identifiant, None)  # retire le devis
+
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour un devis fictif
         self.devis_par_id[identifiant].update({**devis, "lignes": lignes})  # écrase
 

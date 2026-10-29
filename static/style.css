@@ -94,3 +94,5 @@ input[type=checkbox] { width: 20px; height: 20px; padding: 0; }
 .bilan dd { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bilan .resultat { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 700; color: var(--indigo); }
 .a-completer { border-left: 4px solid var(--gold); }
+.actions-entete { display: flex; flex-wrap: wrap; gap: 10px; }
+.actions-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
