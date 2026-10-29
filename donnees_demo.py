@@ -33,7 +33,7 @@ class Donnees:  # même interface que la version Supabase
             client_id = _nouvel_id()  # identifiant du client
             self.clients[client_id] = {"id": client_id, "prenom": prenom, "nom": nom, "entreprise": entreprise, "email": email, "telephone": None, "contact_prefere": None, "email_invalide": False, "adresse": None, "code_postal": None, "ville": None}  # fiche client
             demande_id = _nouvel_id()  # identifiant de la demande
-            self.demandes[demande_id] = {"id": demande_id, "client_id": client_id, "titre": titre, "source": source, "type_evenement": genre, "date_evenement": date, "horaire": None, "lieu": "Lausanne", "adultes": adultes, "enfants": enfants, "budget_indique": budget, "cout_total": None, "message_client": None, "notes_internes": None, "statut": statut, "recue_le": "2026-10-20T10:00:00+00:00"}  # fiche demande
+            self.demandes[demande_id] = {"id": demande_id, "client_id": client_id, "titre": titre, "source": source, "type_evenement": genre, "date_evenement": date, "horaire": None, "lieu": "Lausanne", "adultes": adultes, "enfants": enfants, "budget_indique": budget, "cout_total": None, "cout_equipe": None, "message_client": None, "notes_internes": None, "statut": statut, "recue_le": "2026-10-20T10:00:00+00:00"}  # fiche demande
 
     def connexion(self, email, mot_de_passe):  # vérifie les identifiants de démonstration
         compte = COMPTES.get((email or "").lower())  # cherche le compte
@@ -209,7 +209,7 @@ class Donnees:  # même interface que la version Supabase
         self._journal.append({"id": _nouvel_id(), "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S+00:00"), "auteur": auteur, "texte": texte, "action_id": action_id, "piste_id": piste_id})  # enregistre
 
     def kpi_donnees(self, jeton):  # demandes et devis pour les KPI
-        demandes = [{k: d.get(k) for k in ("id", "titre", "type_evenement", "statut", "recue_le", "date_evenement", "origine", "cout_total", "piste_id")} for d in self.demandes.values()]  # demandes
+        demandes = [{k: d.get(k) for k in ("id", "titre", "type_evenement", "statut", "recue_le", "date_evenement", "origine", "cout_total", "cout_equipe", "piste_id")} for d in self.demandes.values()]  # demandes
         devis = [{k: d.get(k) for k in ("demande_id", "statut", "date_emission", "total_ht")} for d in self.devis_par_id.values()]  # devis
         return demandes, devis  # les deux listes
 

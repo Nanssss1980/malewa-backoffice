@@ -39,6 +39,12 @@ def cle_mois(valeur):  # extrait AAAA-MM d'une date ou d'un horodatage (None si 
     return str(valeur)[:7] if valeur else None  # les 7 premiers caractères
 
 
+def couts_demande(demande):  # coût réel d'un événement : autres coûts + équipe (None si rien n'est saisi)
+    if demande.get("cout_total") is None and demande.get("cout_equipe") is None:  # aucun des deux montants n'est saisi
+        return None  # coûts inconnus
+    return montant(demande.get("cout_total")) + montant(demande.get("cout_equipe"))  # somme des deux montants
+
+
 def montant(valeur):  # convertit en Decimal sans erreur (None devient 0)
     return Decimal(str(valeur)) if valeur not in (None, "") else Decimal("0")  # valeur exacte
 
@@ -61,10 +67,10 @@ def calculer_kpi(demandes, devis, manuel, cibles):  # calcule tout le tableau de
             demande = par_demande.get(un_devis["demande_id"])  # demande liée
             cle_evt = cle_mois(demande.get("date_evenement")) if demande else None  # mois de l'événement
             if cle_evt in lignes:  # dans la période du plan
-                if demande.get("cout_total") is not None and demande["id"] not in couts_comptes:  # coûts saisis, pas encore comptés
+                if couts_demande(demande) is not None and demande["id"] not in couts_comptes:  # coûts saisis, pas encore comptés
                     couts_comptes.add(demande["id"])  # compte une seule fois
                     lignes[cle_evt]["ca_cout"] += montant(un_devis.get("total_ht"))  # CA comparable aux coûts
-                    lignes[cle_evt]["couts"] += montant(demande["cout_total"])  # coûts de l'événement
+                    lignes[cle_evt]["couts"] += couts_demande(demande)  # coûts de l'événement
                 if demande["statut"] == "acompte_recu":  # l'acompte est encaissé : le CA est confirmé
                     lignes[cle_evt]["ca_paye"] += montant(un_devis.get("total_ht"))  # compte aussi dans « acompte reçu »
                 axe = TYPE_VERS_AXE.get(demande["type_evenement"])  # axe correspondant
@@ -141,9 +147,9 @@ def statistiques_type(demandes, devis, types):  # taux de signature et panier mo
         if un_devis["statut"] == "accepte":  # devis signé
             ligne["devis_signes"] += 1  # un de plus
             ligne["ca"] += montant(un_devis.get("total_ht"))  # CA hors taxes
-            if demande.get("cout_total") is not None:  # les coûts de cet événement sont saisis
+            if couts_demande(demande) is not None:  # les coûts de cet événement sont saisis
                 ligne["ca_avec_couts"] += montant(un_devis.get("total_ht"))  # CA comparable aux coûts
-                ligne["couts"] += montant(demande["cout_total"])  # coûts de l'événement
+                ligne["couts"] += couts_demande(demande)  # coûts de l'événement
                 ligne["evenements_avec_couts"] += 1  # un événement de plus avec ses coûts
     for ligne in lignes.values():  # calcule les moyennes
         ligne["taux"] = (Decimal(ligne["devis_signes"]) / ligne["devis_envoyes"] * 100) if ligne["devis_envoyes"] else None  # taux de signature
@@ -161,7 +167,7 @@ def demandes_par_piste(demandes, devis):  # regroupe, par piste, les demandes li
     groupes = {}  # résultat : identifiant de piste vers liste de demandes
     for demande in demandes:  # parcourt les demandes
         if demande.get("piste_id"):  # liée à une piste
-            groupes.setdefault(demande["piste_id"], []).append({"ca": ca_par_demande.get(demande["id"], Decimal("0")), "cout_total": demande.get("cout_total")})  # ajoute
+            groupes.setdefault(demande["piste_id"], []).append({"ca": ca_par_demande.get(demande["id"], Decimal("0")), "cout_total": couts_demande(demande)})  # ajoute
     return groupes  # renvoie les groupes
 
 
@@ -178,6 +184,6 @@ def bilan_piste(piste, liees):  # bilan d'une piste : CA, coûts, frais d'inscri
 
 def a_completer(demandes, aujourdhui=None):  # ce qu'il manque dans les demandes : coûts des événements passés, origine des demandes actives
     aujourdhui = (aujourdhui or datetime.date.today()).isoformat()  # date du jour au format texte
-    sans_couts = [d for d in demandes if d["statut"] in SIGNES and d.get("date_evenement") and str(d["date_evenement"]) < aujourdhui and d.get("cout_total") is None]  # événements passés sans coûts
+    sans_couts = [d for d in demandes if d["statut"] in SIGNES and d.get("date_evenement") and str(d["date_evenement"]) < aujourdhui and couts_demande(d) is None]  # événements passés sans coûts
     sans_origine = [d for d in demandes if d["statut"] not in ("refuse", "annule") and not d.get("origine")]  # demandes sans origine
     return {"sans_couts": sans_couts, "sans_origine": sans_origine}  # les deux listes

@@ -192,7 +192,7 @@ class Donnees:  # regroupe tous les échanges avec la base
 
     def kpi_donnees(self, jeton):  # demandes et devis nécessaires au calcul des KPI
         base = self._client(jeton)  # connexion avec les droits de la personne
-        demandes = base.table("demandes").select("id, titre, type_evenement, statut, recue_le, date_evenement, origine, cout_total, piste_id").execute().data  # demandes
+        demandes = base.table("demandes").select("id, titre, type_evenement, statut, recue_le, date_evenement, origine, cout_total, cout_equipe, piste_id").execute().data  # demandes
         devis = base.table("devis").select("demande_id, statut, date_emission, total_ht").execute().data  # devis
         return demandes, devis  # les deux listes
 

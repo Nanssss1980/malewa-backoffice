@@ -41,8 +41,9 @@
       <div><div class="libelle">Lieu</div><div class="valeur">{{ demande.lieu or 'à préciser' }}</div></div>
       <div><div class="libelle">Invités</div><div class="valeur">{{ demande.adultes }} adultes, {{ demande.enfants }} enfants</div></div>
       <div><div class="libelle">Budget indiqué (facultatif)</div><div class="valeur">{{ demande.budget_indique|chf }}</div></div>
-      <div><div class="libelle">Coûts de l'événement</div><div class="valeur">{{ demande.cout_total|chf if demande.cout_total is not none else 'Non saisis' }}</div></div>
-      {% if marge is not none %}<div><div class="libelle">Marge (CA signé HT moins coûts)</div><div class="valeur">{{ marge|chf }} · {{ (marge / ca_signe * 100)|pct }}</div></div>{% endif %}
+      <div><div class="libelle">Salaires et équipe</div><div class="valeur">{{ demande.cout_equipe|chf if demande.cout_equipe is not none else 'Non saisis' }}</div></div>
+      <div><div class="libelle">Autres coûts</div><div class="valeur">{{ demande.cout_total|chf if demande.cout_total is not none else 'Non saisis' }}</div></div>
+      {% if marge is not none %}<div><div class="libelle">Marge (CA signé HT moins salaires et coûts)</div><div class="valeur">{{ marge|chf }} · {{ (marge / ca_signe * 100)|pct }}</div></div>{% endif %}
       <div><div class="libelle">Source</div><div class="valeur">{{ sources.get(demande.source, '') }}</div></div>
       <div><div class="libelle">Origine</div><div class="valeur">{{ LIBELLE_ORIGINE.get(demande.origine or '', '') or 'Non précisée' }}</div></div>
       {% if piste %}<div><div class="libelle">Piste</div><div class="valeur"><a href="{{ url_for('fiche_piste', identifiant=piste.id) }}">{{ piste.nom }}</a></div></div>{% endif %}

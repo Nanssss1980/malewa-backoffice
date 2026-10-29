@@ -213,7 +213,8 @@ def lire_formulaire(form):  # transforme le formulaire en client + demande, avec
     source = form.get("source", "autre")  # origine de la demande
     origine = form.get("origine", "")  # comment le client a connu Malewa
     genre = form.get("type_evenement", "autre")  # type d'événement
-    cout_total = nombre_saisi(form.get("cout_total"), erreurs, "Coûts de l'événement")  # coûts réels de l'événement (facultatif)
+    cout_total = nombre_saisi(form.get("cout_total"), erreurs, "Autres coûts de l'événement")  # coûts réels hors équipe (facultatif)
+    cout_equipe = nombre_saisi(form.get("cout_equipe"), erreurs, "Salaires et équipe")  # salaires et extras de l'événement (facultatif)
     piste_id = texte(form, "piste_id")  # piste d'où vient la demande (facultatif)
     if piste_id:  # un identifiant a été choisi
         try:  # doit être un identifiant valide
@@ -223,7 +224,7 @@ def lire_formulaire(form):  # transforme le formulaire en client + demande, avec
     if source not in dict(SOURCES) or genre not in dict(TYPES) or origine not in dict(ORIGINES):  # valeurs inattendues
         abort(400)  # requête refusée
     demande = {  # champs de la demande
-        "titre": texte(form, "titre") or "Demande sans titre", "source": source, "origine": origine or None, "piste_id": piste_id, "cout_total": cout_total, "type_evenement": genre,
+        "titre": texte(form, "titre") or "Demande sans titre", "source": source, "origine": origine or None, "piste_id": piste_id, "cout_total": cout_total, "cout_equipe": cout_equipe, "type_evenement": genre,
         "date_evenement": date_evenement, "horaire": texte(form, "horaire"), "lieu": texte(form, "lieu"),
         "adultes": entier(form, "adultes", erreurs, "Adultes"), "enfants": entier(form, "enfants", erreurs, "Enfants"),
         "budget_indique": budget or None, "message_client": texte(form, "message_client"), "notes_internes": texte(form, "notes_internes"),
@@ -309,8 +310,9 @@ def fiche_demande(identifiant):  # affiche la fiche
     piste = db.piste(jeton(), demande.get("piste_id"))  # piste d'où vient la demande (si renseignée)
     devis_liste = db.devis_de_demande(jeton(), identifiant)  # devis de la demande
     ca_signe = sum((strategie.montant(d.get("total_ht")) for d in devis_liste if d["statut"] == "accepte"), Decimal("0"))  # CA hors taxes des devis acceptés
-    marge = (ca_signe - strategie.montant(demande["cout_total"])) if ca_signe and demande.get("cout_total") is not None else None  # marge, seulement si un devis est accepté et les coûts saisis
-    return render_template("demande_fiche.html", ca_signe=ca_signe, marge=marge, piste=piste, demande=demande, conflits=conflits, statuts=STATUTS, types=dict(TYPES), sources=dict(SOURCES), devis_liste=devis_liste)  # affiche la page
+    couts = strategie.couts_demande(demande)  # coûts totaux : équipe + autres coûts (None si rien n'est saisi)
+    marge = (ca_signe - couts) if ca_signe and couts is not None else None  # marge, seulement si un devis est accepté et les coûts saisis
+    return render_template("demande_fiche.html", ca_signe=ca_signe, marge=marge, couts=couts, piste=piste, demande=demande, conflits=conflits, statuts=STATUTS, types=dict(TYPES), sources=dict(SOURCES), devis_liste=devis_liste)  # affiche la page
 
 
 @app.route("/demandes/<identifiant>/modifier", methods=["GET", "POST"])  # modification d'une demande
