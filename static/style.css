@@ -96,3 +96,6 @@ input[type=checkbox] { width: 20px; height: 20px; padding: 0; }
 .a-completer { border-left: 4px solid var(--gold); }
 .actions-entete { display: flex; flex-wrap: wrap; gap: 10px; }
 .actions-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+
+.lien-mdp { color: inherit; font-size: 13px; text-decoration: underline; }
+.form-mdp { display: flex; flex-direction: column; gap: 14px; max-width: 420px; }

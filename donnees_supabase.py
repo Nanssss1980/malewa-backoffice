@@ -27,6 +27,14 @@ class Donnees:  # regroupe tous les échanges avec la base
             raise ValueError("Identifiants incorrects") from erreur  # message volontairement vague
         return self._session(reponse.session, reponse.user)  # renvoie les informations de session
 
+    def changer_mot_de_passe(self, email, actuel, nouveau):  # change le mot de passe de la personne connectée
+        client = self._client()  # connexion sans identité
+        try:  # vérifie d'abord l'ancien mot de passe
+            client.auth.sign_in_with_password({"email": email, "password": actuel})  # ouvre une session sur ce client
+        except Exception as erreur:  # ancien mot de passe faux
+            raise ValueError("Mot de passe actuel incorrect") from erreur  # message clair pour le formulaire
+        client.auth.update_user({"password": nouveau})  # enregistre le nouveau mot de passe chez Supabase Auth
+
     def rafraichir(self, jeton_refresh):  # obtient un nouveau jeton quand l'ancien expire
         client = self._client()  # connexion sans identité
         reponse = client.auth.refresh_session(jeton_refresh)  # demande un nouveau jeton à Supabase Auth

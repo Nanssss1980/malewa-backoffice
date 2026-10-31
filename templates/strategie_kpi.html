@@ -11,7 +11,7 @@
   <section class="carte defile">
     <h2>Mois par mois</h2>
     <table class="tableau kpi">
-      <thead><tr><th>Mois</th><th>Demandes</th><th>Devis envoyés</th><th>Devis signés</th><th>Taux</th><th>CA Mariages</th><th>CA Festivals</th><th>CA Privé & entr.</th><th>CA Commande simple</th><th>CA Pop-up</th><th>CA autre</th><th>CA total</th><th>Dont acompte reçu</th><th>Avis Google</th></tr></thead>
+      <thead><tr><th>Mois</th><th>Demandes</th><th>Devis envoyés</th><th>Devis signés</th><th>Taux</th><th>CA Mariages</th><th>CA Festivals</th><th>CA Privé & entr.</th><th>CA Commande simple</th><th>CA Pop-up</th><th>CA autre</th><th>CA total</th><th>Dont acompte reçu</th><th>Marge</th><th>Charges fixes</th><th>Avis Google</th></tr></thead>
       <tbody>
       {% for l in kpi.lignes %}
         {% set saisie = manuel.mois.get(l.mois, {}) %}

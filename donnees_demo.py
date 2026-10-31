@@ -23,6 +23,7 @@ class Donnees:  # même interface que la version Supabase
         self.clients = {}  # clients par identifiant
         self.demandes = {}  # demandes par identifiant
         self.devis_par_id = {}  # devis par identifiant
+        self.mots_de_passe = {}  # mots de passe modifiés pendant la démo (e-mail -> mot de passe)
         fictifs = [  # (prénom, nom, entreprise, e-mail, titre, source, type, date, adultes, enfants, budget, statut)
             ("Aurélie", "Exemple", None, "aurelie@exemple.test", "Mariage Exemple", "whatsapp", "mariage", "2027-06-19", 120, 10, 12000, "nouvelle"),
             ("Marc", "Démo", None, "marc@exemple.test", "Anniversaire 40 ans", "site", "evenement_prive", "2027-03-06", 45, 0, None, "en_discussion"),
@@ -37,9 +38,14 @@ class Donnees:  # même interface que la version Supabase
 
     def connexion(self, email, mot_de_passe):  # vérifie les identifiants de démonstration
         compte = COMPTES.get((email or "").lower())  # cherche le compte
-        if not compte or mot_de_passe != MOT_DE_PASSE:  # inconnu ou mauvais mot de passe
+        if not compte or mot_de_passe != self.mots_de_passe.get(email.lower(), MOT_DE_PASSE):  # inconnu ou mauvais mot de passe
             raise ValueError("Identifiants incorrects")  # même message vague qu'en production
         return {"jeton": "jeton-" + compte[0], "refresh": "refresh-" + compte[0], "expire": time.time() + 3600, "id": compte[0], "email": email.lower()}  # session fictive
+
+    def changer_mot_de_passe(self, email, actuel, nouveau):  # change le mot de passe fictif
+        if actuel != self.mots_de_passe.get(email.lower(), MOT_DE_PASSE):  # ancien mot de passe faux
+            raise ValueError("Mot de passe actuel incorrect")  # même erreur qu'en production
+        self.mots_de_passe[email.lower()] = nouveau  # retient le nouveau mot de passe en mémoire
 
     def rafraichir(self, jeton_refresh):  # renouvelle le jeton fictif
         identifiant = jeton_refresh.replace("refresh-", "")  # retrouve le compte

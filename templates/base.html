@@ -15,6 +15,7 @@
     <nav aria-label="Navigation principale"><a href="{{ url_for('liste_demandes') }}">Demandes</a><a href="{{ url_for('strategie_accueil') }}">Stratégie</a>{% if utilisateur.role == 'admin' %}<a href="{{ url_for('reglages') }}">Réglages</a>{% endif %}</nav>
     <div class="moi">
       <span>{{ utilisateur.nom }} ({{ 'modification' if utilisateur.role == 'admin' else 'lecture seule' }})</span>
+      <a class="lien-mdp" href="{{ url_for('changer_mot_de_passe') }}">Mot de passe</a>
       <form method="post" action="{{ url_for('deconnexion') }}">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <button type="submit">Déconnexion</button>

@@ -270,6 +270,38 @@ def deconnexion():  # vide la session
     return redirect(url_for("connexion"))  # retour à la connexion
 
 
+MOT_DE_PASSE_MIN = 12  # longueur minimale d'un mot de passe
+
+
+@app.route("/mot-de-passe", methods=["GET", "POST"])  # changer son propre mot de passe
+@connexion_requise  # toute personne connectée, admin ou lecture
+def changer_mot_de_passe():  # affiche et traite le formulaire
+    if request.method == "POST":  # formulaire envoyé
+        actuel = request.form.get("actuel") or ""  # mot de passe actuel
+        nouveau = request.form.get("nouveau") or ""  # nouveau mot de passe
+        confirmation = request.form.get("confirmation") or ""  # nouveau mot de passe retapé
+        erreur = None  # message d'erreur éventuel
+        if len(nouveau) < MOT_DE_PASSE_MIN:  # trop court
+            erreur = f"Le nouveau mot de passe doit faire au moins {MOT_DE_PASSE_MIN} caractères."  # explication
+        elif nouveau != confirmation:  # les deux saisies diffèrent
+            erreur = "Les deux nouveaux mots de passe ne sont pas identiques."  # explication
+        elif nouveau == actuel:  # aucun changement
+            erreur = "Le nouveau mot de passe doit être différent de l'actuel."  # explication
+        if not erreur:  # saisie correcte : tentative de changement
+            try:  # appel à la base
+                db.changer_mot_de_passe(session["utilisateur"]["email"], actuel, nouveau)  # vérifie l'ancien puis enregistre
+            except ValueError:  # ancien mot de passe faux
+                erreur = "Le mot de passe actuel est incorrect."  # explication
+            except Exception:  # refus de Supabase (mot de passe trop faible, service indisponible)
+                erreur = "Le changement a échoué. Essayez un mot de passe plus long ou plus varié."  # explication
+        if erreur:  # affiche l'erreur sans rien enregistrer
+            flash(erreur, "erreur")  # message à l'écran
+            return render_template("mot_de_passe.html", minimum=MOT_DE_PASSE_MIN), 400  # réaffiche le formulaire
+        flash("Mot de passe modifié.", "ok")  # confirmation
+        return redirect(url_for("liste_demandes"))  # retour à la liste des demandes
+    return render_template("mot_de_passe.html", minimum=MOT_DE_PASSE_MIN)  # affiche le formulaire
+
+
 @app.route("/")  # page d'accueil
 @connexion_requise  # réservée aux personnes connectées
 def accueil():  # redirige vers les demandes
