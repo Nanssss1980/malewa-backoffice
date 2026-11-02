@@ -132,6 +132,12 @@ class Donnees:  # même interface que la version Supabase
     def supprimer_devis(self, jeton, identifiant):  # supprime un devis fictif
         self.devis_par_id.pop(identifiant, None)  # retire le devis
 
+    def supprimer_demande(self, jeton, identifiant):  # supprime une demande fictive et ses devis
+        for id_devis in [i for i, d in self.devis_par_id.items() if d["demande_id"] == identifiant]:  # devis de la demande
+            self.devis_par_id.pop(id_devis)  # retire le devis
+        if self.demandes.pop(identifiant, None) is None:  # demande introuvable
+            raise ValueError("Suppression refusée")  # même erreur qu'en production
+
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour un devis fictif
         self.devis_par_id[identifiant].update({**devis, "lignes": lignes})  # écrase
 

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer {{ demande.titre }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('fiche_demande', identifiant=demande.id) }}">&larr; {{ demande.titre }}</a>
+    <h1>Supprimer cette demande ?</h1>
+  </div>
+</div>
+<section class="carte">
+  <p><strong>{{ demande.titre }}</strong>, {{ demande.date_evenement|date_fr }}, {{ demande.clients|nom_client }}.</p>
+  {% if devis %}
+  <p>Les devis suivants seront aussi supprimés : {% for d in devis %}<strong>{{ d.numero }}</strong> ({{ STATUTS_DEVIS.get(d.statut, d.statut) }}){{ ', ' if not loop.last }}{% endfor %}. Leurs numéros ne seront pas réutilisés.</p>
+  {% else %}
+  <p>Cette demande n'a aucun devis.</p>
+  {% endif %}
+  <p>Cette action est définitive. La fiche du client est conservée.</p>
+  <p class="libelle">Pour garder une trace d'une demande qui ne se fera pas, préférez le statut « Annulé » ou « Refusé » : elle disparaît de la suite du travail sans être effacée.</p>
+  <form method="post" class="actions-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button type="submit" class="btn">Oui, supprimer cette demande</button>
+    <a class="btn secondaire" href="{{ url_for('fiche_demande', identifiant=demande.id) }}">Annuler</a>
+  </form>
+</section>
+{% endblock %}

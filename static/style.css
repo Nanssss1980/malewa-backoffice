@@ -99,3 +99,4 @@ input[type=checkbox] { width: 20px; height: 20px; padding: 0; }
 
 .lien-mdp { color: inherit; font-size: 13px; text-decoration: underline; }
 .form-mdp { display: flex; flex-direction: column; gap: 14px; max-width: 420px; }
+.lien-suppr { font-size: 13px; color: var(--err); white-space: nowrap; }

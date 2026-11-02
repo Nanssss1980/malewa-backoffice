@@ -510,6 +510,26 @@ def supprimer_devis(identifiant):  # demande confirmation, puis supprime le devi
     return render_template("devis_supprimer.html", devis=devis, demande=demande)  # page de confirmation
 
 
+@app.route("/demandes/<identifiant>/supprimer", methods=["GET", "POST"])  # suppression d'une demande (confirmation puis suppression)
+@admin_requis  # réservée aux admins
+def supprimer_demande(identifiant):  # demande confirmation, puis supprime la demande et ses devis
+    demande = demande_ou_404(identifiant)  # la demande concernée
+    devis = db.devis_de_demande(jeton(), identifiant)  # ses devis
+    bloquants = [d["numero"] for d in devis if d["statut"] not in STATUTS_SUPPRIMABLES]  # devis envoyés ou acceptés
+    if bloquants:  # trop risqué : on les supprime ou on les remet d'abord en brouillon
+        flash("Cette demande a un devis envoyé ou accepté (" + ", ".join(bloquants) + "). Remettez-le en brouillon et supprimez-le d'abord, ou passez la demande en « Annulé ».", "erreur")  # explication
+        return redirect(url_for("fiche_demande", identifiant=identifiant))  # retour à la fiche
+    if request.method == "POST":  # confirmation reçue
+        try:  # suppression
+            db.supprimer_demande(jeton(), identifiant)  # supprime les devis puis la demande
+        except Exception:  # refus de la base (droits) ou problème
+            flash("La suppression a échoué. Vérifiez que la règle de suppression des demandes est bien en place dans Supabase.", "erreur")  # explication
+            return redirect(url_for("fiche_demande", identifiant=identifiant))  # retour à la fiche
+        flash(f"Demande « {demande['titre']} » supprimée.", "ok")  # confirmation
+        return redirect(url_for("liste_demandes"))  # retour à la liste
+    return render_template("demande_supprimer.html", demande=demande, devis=devis)  # page de confirmation
+
+
 def echeances(devis):  # calcule les deux acomptes et le solde d'un devis enregistré (le solde est le reste exact)
     total = Decimal(str(devis["total_ttc"]))  # total à payer
     p1 = Decimal(str(devis["pourcentage_acompte_1"]))  # pourcentage du premier acompte

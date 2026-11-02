@@ -12,7 +12,7 @@
 <div class="carte defile">
   {% if demandes %}
   <table class="tableau">
-    <thead><tr><th>Date</th><th>Demande</th><th>Client</th><th>Invités</th><th>Budget indiqué</th><th>Statut</th></tr></thead>
+    <thead><tr><th>Date</th><th>Demande</th><th>Client</th><th>Invités</th><th>Budget indiqué</th><th>Statut</th>{% if utilisateur.role == 'admin' %}<th></th>{% endif %}</tr></thead>
     <tbody>
     {% for d in demandes %}
       <tr>
@@ -23,6 +23,7 @@
         <td>{{ d.adultes }} + {{ d.enfants }} enf.</td>
         <td>{{ d.budget_indique|chf }}</td>
         <td><span class="pill {{ d.statut }}">{{ LIBELLE_STATUT[d.statut] }}</span></td>
+        {% if utilisateur.role == 'admin' %}<td><a class="lien-suppr" href="{{ url_for('supprimer_demande', identifiant=d.id) }}">Supprimer</a></td>{% endif %}
       </tr>
     {% endfor %}
     </tbody>

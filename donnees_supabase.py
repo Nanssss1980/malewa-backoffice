@@ -147,6 +147,15 @@ class Donnees:  # regroupe tous les échanges avec la base
         base.table("devis_lignes").delete().eq("devis_id", identifiant).execute()  # retire d'abord les lignes
         base.table("devis").delete().eq("id", identifiant).execute()  # puis le devis
 
+    def supprimer_demande(self, jeton, identifiant):  # supprime une demande avec ses devis (le client est conservé)
+        base = self._client(jeton)  # connexion avec les droits de la personne
+        for devis in self.devis_de_demande(jeton, identifiant):  # chaque devis de la demande
+            base.table("devis_lignes").delete().eq("devis_id", devis["id"]).execute()  # retire d'abord ses lignes
+            base.table("devis").delete().eq("id", devis["id"]).execute()  # puis le devis
+        reponse = base.table("demandes").delete().eq("id", identifiant).execute()  # supprime la demande
+        if not reponse.data:  # rien supprimé : la base a refusé (droits) ou la demande n'existe plus
+            raise ValueError("Suppression refusée")  # remonte l'erreur à la page
+
     def modifier_devis(self, jeton, identifiant, devis, lignes):  # met à jour le devis et remplace ses lignes
         base = self._client(jeton)  # connexion avec les droits de la personne
         base.table("devis").update(self._json(devis)).eq("id", identifiant).execute()  # met à jour le devis

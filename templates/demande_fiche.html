@@ -7,7 +7,7 @@
     <a href="{{ url_for('liste_demandes') }}">&larr; Toutes les demandes</a>
     <h1>{{ demande.titre }}</h1>
   </div>
-  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_demande', identifiant=demande.id) }}">Modifier</a>{% endif %}
+  {% if utilisateur.role == 'admin' %}<div class="actions-entete"><a class="btn secondaire" href="{{ url_for('modifier_demande', identifiant=demande.id) }}">Modifier</a> <a class="btn secondaire" href="{{ url_for('supprimer_demande', identifiant=demande.id) }}">Supprimer</a></div>{% endif %}
 </div>
 
 <div class="statuts" role="group" aria-label="Statut de la demande">
