@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Connexion · Malewa back-office</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if MODE_DEMO %}<div class="demo">Mode démo : admin@malewa.demo ou lecture@malewa.demo, mot de passe Demo-1234</div>{% endif %}
+  <div class="connexion">
+    <div class="carte">
+      <img src="{{ url_for('static', filename='logo-malewa.png') }}" alt="Malewa">
+      <h1>Back-office</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for categorie, message in messages %}<div class="message {{ categorie }}" role="alert">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      <form method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label>Adresse e-mail<input type="email" name="email" autocomplete="username" required autofocus></label>
+        <label>Mot de passe<input type="password" name="mot_de_passe" autocomplete="current-password" required></label>
+        <button class="btn" type="submit">Se connecter</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

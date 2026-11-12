@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre_page }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <h1>{{ titre_page }}</h1>
+  <a href="{{ url_for('fiche_action', identifiant=identifiant) if identifiant else url_for('strategie_actions') }}">Annuler</a>
+</div>
+{% if erreurs %}<div class="message erreur" role="alert"><strong>À corriger :</strong><ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" class="formulaire">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <section class="carte">
+    <h2>L'action</h2>
+    <label>Action<input name="action" value="{{ valeurs.get('action', '') }}" required></label>
+    <p></p>
+    <div class="grille">
+      <label>Axe<select name="axe">{% for code, nom in axes %}<option value="{{ code }}" {{ 'selected' if valeurs.get('axe') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Priorité<select name="priorite">{% for code, nom in priorites %}<option value="{{ code }}" {{ 'selected' if valeurs.get('priorite') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Statut<select name="statut">{% for code, nom in statuts %}<option value="{{ code }}" {{ 'selected' if valeurs.get('statut') == code }}>{{ nom }}</option>{% endfor %}</select></label>
+      <label>Échéance<input type="date" name="echeance" value="{{ valeurs.get('echeance', '') }}"></label>
+      <label>Responsable<input name="responsable" value="{{ valeurs.get('responsable', '') }}"></label>
+    </div>
+    <input type="hidden" name="mois" value="{{ valeurs.get('mois', '') }}">
+    <p></p>
+    <label>Pourquoi<textarea name="pourquoi" rows="3">{{ valeurs.get('pourquoi', '') }}</textarea></label>
+    <p></p>
+    <label>Livrable<textarea name="livrable" rows="2">{{ valeurs.get('livrable', '') }}</textarea></label>
+    <p></p>
+    <label>Indicateur de réussite<input name="indicateur" value="{{ valeurs.get('indicateur', '') }}"></label>
+    <p></p>
+    <label>Notes<textarea name="notes" rows="3">{{ valeurs.get('notes', '') }}</textarea></label>
+  </section>
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+{% endblock %}

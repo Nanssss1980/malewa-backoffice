@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titre %}Réglages{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <h1>Réglages</h1>
+  <a href="{{ url_for('liste_demandes') }}">Retour aux demandes</a>
+</div>
+{% if erreurs %}
+<div class="message erreur" role="alert">
+  <strong>À corriger :</strong>
+  <ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+<form method="post" class="formulaire">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+
+  <section class="carte">
+    <h2>L'entreprise</h2>
+    <div class="grille">
+      <label>Raison sociale<input name="raison_sociale" value="{{ valeurs.get('raison_sociale', '') }}" required></label>
+      <label>Numéro IDE<input name="numero_ide" value="{{ valeurs.get('numero_ide', '') }}"></label>
+      <label>Adresse<input name="adresse" value="{{ valeurs.get('adresse', '') }}"></label>
+      <label>E-mail<input type="email" name="email" value="{{ valeurs.get('email', '') }}"></label>
+      <label>Téléphone<input name="telephone" value="{{ valeurs.get('telephone', '') }}"></label>
+      <label>Site web<input name="site_web" value="{{ valeurs.get('site_web', '') }}"></label>
+    </div>
+  </section>
+
+  <section class="carte">
+    <h2>Coordonnées bancaires (imprimées sur le devis)</h2>
+    <div class="grille">
+      <label>IBAN<input name="iban" value="{{ valeurs.get('iban', '') }}" autocomplete="off" placeholder="CH00 0000 0000 0000 0000 0"></label>
+      <label>Banque<input name="banque" value="{{ valeurs.get('banque', '') }}"></label>
+      <label>Adresse de la banque<input name="adresse_banque" value="{{ valeurs.get('adresse_banque', '') }}"></label>
+    </div>
+  </section>
+
+  <section class="carte">
+    <h2>Signature du devis</h2>
+    <div class="grille">
+      <label>Nom de la personne qui signe<input name="signataire_nom" value="{{ valeurs.get('signataire_nom', '') }}"></label>
+      <label>Fonction<input name="signataire_fonction" value="{{ valeurs.get('signataire_fonction', '') }}"></label>
+      <label>Mention sous la signature<input name="mention_signature" value="{{ valeurs.get('mention_signature', '') }}"></label>
+    </div>
+  </section>
+
+  <section class="carte">
+    <h2>Tarifs, TVA et paiement</h2>
+    <div class="grille">
+      <label>Tarif horaire de jour (CHF)<input name="tarif_horaire" value="{{ valeurs.get('tarif_horaire', '') }}" inputmode="decimal"></label>
+      <label>Tarif horaire de nuit (CHF)<input name="tarif_horaire_nuit" value="{{ valeurs.get('tarif_horaire_nuit', '') }}" inputmode="decimal"></label>
+      <label>Tarif au kilomètre (CHF)<input name="tarif_km" value="{{ valeurs.get('tarif_km', '') }}" inputmode="decimal"></label>
+      <label>Taux de TVA (%)<input name="taux_tva" value="{{ valeurs.get('taux_tva', '') }}" inputmode="decimal"></label>
+      <label>Validité du devis (jours)<input name="validite_jours" value="{{ valeurs.get('validite_jours', '') }}" inputmode="numeric"></label>
+      <label>Premier acompte (%)<input name="pourcentage_acompte_1" value="{{ valeurs.get('pourcentage_acompte_1', '') }}" inputmode="decimal"></label>
+      <label>Deuxième acompte (%)<input name="pourcentage_acompte_2" value="{{ valeurs.get('pourcentage_acompte_2', '') }}" inputmode="decimal"></label>
+    </div>
+    <p class="libelle">Ces valeurs sont proposées à l'ouverture d'un nouveau devis. Les devis déjà créés gardent les leurs.</p>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="submit">Enregistrer</button>
+    <a class="btn secondaire" href="{{ url_for('liste_demandes') }}">Annuler</a>
+  </div>
+</form>
+{% endblock %}

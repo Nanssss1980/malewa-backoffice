@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titre %}Action {{ action.numero }}{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div><a href="{{ url_for('strategie_actions') }}">&larr; Plan d'actions</a><h1>{{ action.action }}</h1></div>
+  {% if utilisateur.role == 'admin' %}<a class="btn secondaire" href="{{ url_for('modifier_action', identifiant=action.id) }}">Modifier</a>{% endif %}
+</div>
+<div class="statuts" role="group" aria-label="Statut de l'action">
+  {% for code, nom in statuts %}
+    {% if utilisateur.role == 'admin' %}
+      <form method="post" action="{{ url_for('statut_action', identifiant=action.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="statut" value="{{ code }}"><button type="submit" class="{{ 'courant' if action.statut == code }}">{{ nom }}</button></form>
+    {% else %}<span class="pill {{ 'nouvelle' if action.statut == code }}">{{ nom }}</span>{% endif %}
+  {% endfor %}
+</div>
+{% if action.retard %}<div class="alerte" role="alert"><strong>En retard :</strong> échéance du {{ action.echeance|date_fr }}.</div>{% endif %}
+<div class="deux">
+  <section class="carte gauche">
+    <h2>L'action</h2>
+    <div class="grille">
+      <div><div class="libelle">N°</div><div class="valeur">{{ action.numero }}</div></div>
+      <div><div class="libelle">Axe</div><div class="valeur">{{ LIBELLE_AXE[action.axe] }}</div></div>
+      <div><div class="libelle">Échéance</div><div class="valeur">{{ action.echeance|date_fr }}</div></div>
+      <div><div class="libelle">Priorité</div><div class="valeur">{{ action.priorite }}</div></div>
+      <div><div class="libelle">Responsable</div><div class="valeur">{{ action.responsable or 'À attribuer' }}</div></div>
+    </div>
+    {% if action.pourquoi %}<p></p><div class="libelle">Pourquoi</div><div class="menu">{{ action.pourquoi }}</div>{% endif %}
+    {% if action.livrable %}<p></p><div class="libelle">Livrable</div><div class="menu">{{ action.livrable }}</div>{% endif %}
+    {% if action.indicateur %}<p></p><div class="libelle">Indicateur de réussite</div><div class="menu">{{ action.indicateur }}</div>{% endif %}
+    {% if action.notes %}<p></p><div class="libelle">Notes</div><div class="menu">{{ action.notes }}</div>{% endif %}
+  </section>
+  <section class="carte droite">
+    <h2>Journal de l'action</h2>
+    {% if utilisateur.role == 'admin' %}
+    <form method="post" action="{{ url_for('note_action', identifiant=action.id) }}" class="formulaire">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Qu'as-tu fait ?<textarea name="note" rows="3" maxlength="1000" required></textarea></label>
+      <button class="btn" type="submit">Ajouter au journal</button>
+    </form>
+    {% endif %}
+    {% include "_journal.html" %}
+  </section>
+</div>
+{% endblock %}

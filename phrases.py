@@ -18,4 +18,4 @@ def liste(demande, adultes, enfants, personnes):  # renvoie les phrases : (ident
     ]  # la phrase sur les CGV jointes est ajoutée automatiquement quand la case « Joindre les CGV » est cochée
 
 
-PHRASE_CGV = "Nos conditions générales sont jointes à ce courriel."  # ajoutée si les CGV sont jointes
+PHRASE_CGV = "Nos conditions générales sont jointes à ce devis."  # ajoutée si les CGV sont jointes

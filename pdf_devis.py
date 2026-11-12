@@ -237,5 +237,9 @@ def generer(d):  # fabrique le PDF et renvoie ses octets
     document = BaseDocTemplate(memoire, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=20 * mm, title="Devis " + str(d["numero"]) + " Malewa", author="Malewa Sàrl")  # document A4
     cadre = Frame(18 * mm, 20 * mm, LARGEUR, 297 * mm - 36 * mm, leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)  # zone de texte
     document.addPageTemplates([PageTemplate(id="devis", frames=[cadre])])  # modèle unique
-    document.build(page_1(d) + [PageBreak()] + page_2(d) + [PageBreak()] + page_3(d), canvasmaker=ToileNumerotee)  # assemble les trois pages
+    elements = page_1(d) + [PageBreak()] + page_2(d) + [PageBreak()] + page_3(d)  # les trois pages du devis
+    if d.get("cgv_jointes"):  # conditions générales jointes : elles suivent le devis
+        from conditions_generales import pages_cgv  # import tardif (évite l'import circulaire)
+        elements += [PageBreak()] + pages_cgv(d)  # CG à la suite
+    document.build(elements, canvasmaker=ToileNumerotee)  # assemble le PDF
     return memoire.getvalue()  # octets du PDF

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titre %}Pistes{% endblock %}
+{% block contenu %}
+{% set actif = 'pistes' %}
+<div class="entete">
+  <h1>Pistes</h1>
+  {% if utilisateur.role == 'admin' %}<a class="btn" href="{{ url_for('nouvelle_piste', categorie=categorie) }}">Nouvelle piste</a>{% endif %}
+</div>
+{% include "_strategie_nav.html" %}
+<nav class="filtres" aria-label="Liste de pistes">
+  {% for code, nom in categories %}<a href="{{ url_for('strategie_pistes', categorie=code) }}" class="{{ 'actif' if categorie == code }}">{{ nom }} ({{ nombres[code] }})</a>{% endfor %}
+</nav>
+<nav class="filtres" aria-label="Filtrer par statut">
+  <a href="{{ url_for('strategie_pistes', categorie=categorie) }}" class="{{ 'actif' if not statut }}">Tous</a>
+  {% for code, nom in statuts %}<a href="{{ url_for('strategie_pistes', categorie=categorie, statut=code) }}" class="{{ 'actif' if statut == code }}">{{ nom }}</a>{% endfor %}
+</nav>
+<div class="carte defile">
+  {% if pistes %}
+  <table class="tableau">
+    <thead><tr><th>Nom</th><th>{{ 'Dates 2026' if categorie == 'festival' else ('Base' if categorie == 'planner' else 'Lieu / info') }}</th><th>Type</th><th>Priorité</th><th>Dossier</th><th>Relance</th><th>Résultat</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for p in pistes %}
+      <tr>
+        <td><a href="{{ url_for('fiche_piste', identifiant=p.id) }}"><strong>{{ p.nom }}</strong></a>{% if p.personne %}<br><span class="libelle">{{ p.personne }}</span>{% endif %}</td>
+        <td>{{ (p.dates_info if categorie == 'festival' else (p.lieu or p.dates_info)) or '' }}</td>
+        <td>{{ p.type_piste or '' }}</td>
+        <td>{{ p.priorite }}</td>
+        <td>{{ LIBELLE_DOSSIER.get(p.dossier_envoye or '', '') if p.dossier_envoye else '' }}</td>
+        <td>{{ p.prochaine_relance|date_fr if p.prochaine_relance else '' }}</td>
+        <td>{% if p.bilan %}<span class="pill {{ 'accepte' if p.bilan.resultat > 0 else 'refuse' }}">{{ p.bilan.resultat|chf }}</span>{% endif %}</td>
+        <td><span class="pill {{ 'accepte' if p.statut == 'retenu' else ('devis_envoye' if p.statut in ('contacte', 'en_discussion') else ('annule' if p.statut == 'abandonne' else '')) }}">{{ LIBELLE_STATUT_PISTE[p.statut] }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>Aucune piste pour ce filtre.</p>{% endif %}
+</div>
+{% endblock %}

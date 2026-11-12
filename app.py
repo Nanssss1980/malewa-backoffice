@@ -559,7 +559,7 @@ def donnees_pdf(devis, reglages):  # rassemble tout ce dont le PDF a besoin, dé
         "lignes": lignes, "soumis_tva": devis["soumis_tva"], "taux_tva": "%g" % Decimal(str(devis["taux_tva"])), "total_ht": Decimal(str(devis["total_ht"])), "montant_tva": Decimal(str(devis["montant_tva"])), "total": Decimal(str(devis["total_ttc"])),
         "validite": devis["validite_jours"], "a1": ec["a1"], "a2": ec["a2"], "a3": ec["a3"], "p1": ec["p1"], "p2": ec["p2"], "p3": ec["p3"], "p1_txt": "%g" % ec["p1"], "p2_txt": "%g" % ec["p2"], "p3_txt": "%g" % ec["p3"],
         "tarif_h": nombre_texte(saisie.get("tarif_h") or reglages.get("tarif_horaire", 35)), "tarif_hn": nombre_texte(saisie.get("tarif_hn") or reglages.get("tarif_horaire_nuit", 42)),
-        "reglages": reglages,
+        "reglages": reglages, "cgv_jointes": bool(devis.get("cgv_jointes")),
     }  # dictionnaire complet pour pdf_devis.generer
 
 

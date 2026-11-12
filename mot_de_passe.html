@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titre %}Changer mon mot de passe{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div>
+    <a href="{{ url_for('liste_demandes') }}">&larr; Demandes</a>
+    <h1>Changer mon mot de passe</h1>
+  </div>
+</div>
+<section class="carte">
+  <p class="libelle">Compte : {{ utilisateur.email }}. Choisissez au moins {{ minimum }} caractères, personnels et utilisés nulle part ailleurs.</p>
+  <form method="post" class="form-mdp">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label>Mot de passe actuel<input type="password" name="actuel" autocomplete="current-password" required></label>
+    <label>Nouveau mot de passe<input type="password" name="nouveau" autocomplete="new-password" minlength="{{ minimum }}" required></label>
+    <label>Nouveau mot de passe, une seconde fois<input type="password" name="confirmation" autocomplete="new-password" minlength="{{ minimum }}" required></label>
+    <div class="actions-form">
+      <button type="submit" class="btn">Enregistrer</button>
+      <a class="btn secondaire" href="{{ url_for('liste_demandes') }}">Annuler</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
