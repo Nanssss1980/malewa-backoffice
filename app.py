@@ -9,6 +9,7 @@ from decimal import Decimal  # montants exacts
 import strategie  # listes de choix et calculs de la stratégie (KPI)
 import uuid  # contrôle des identifiants de piste
 import calcul  # calculs du devis (lignes, TVA, acomptes)
+import relances  # rappels de relance des devis restés sans réponse
 import phrases  # phrases proposées pour la lettre du devis
 import pdf_devis  # fabrication du PDF du devis
 import re  # nettoyage du nom de fichier
@@ -317,7 +318,10 @@ def liste_demandes():  # affiche la liste, filtrable par statut
     demandes = db.liste_demandes(jeton(), statut)  # lit les demandes
     for demande in demandes:  # repère les doubles réservations
         demande["conflits"] = [] if demande["statut"] in ("refuse", "annule") else db.dates_prises(jeton(), demande["date_evenement"], demande["id"])  # autres demandes actives le même jour (inutile pour une demande refusée ou annulée)
-    return render_template("demandes.html", demandes=demandes, statut=statut, statuts=STATUTS, types=dict(TYPES))  # affiche la page
+    delai = db.reglages(jeton()).get("delai_relance_jours") or relances.DELAI_PAR_DEFAUT  # délai choisi dans Réglages (5 jours par défaut)
+    en_attente = db.liste_demandes(jeton(), "devis_envoye")  # demandes dont le devis est parti
+    a_relancer = relances.a_relancer(en_attente, db.devis_envoyes(jeton()), delai)  # celles sans réponse depuis trop longtemps
+    return render_template("demandes.html", demandes=demandes, statut=statut, statuts=STATUTS, types=dict(TYPES), a_relancer=a_relancer, delai=delai)  # affiche la page
 
 
 @app.route("/demandes/nouvelle", methods=["GET", "POST"])  # création d'une demande
@@ -644,6 +648,11 @@ def reglages():  # affiche et enregistre les réglages
             valeurs["validite_jours"] = int(brut_jours)  # garde la valeur
         else:  # invalide
             erreurs.append("Validité du devis : un nombre de jours entre 1 et 365.")  # message
+        brut_relance = (request.form.get("delai_relance_jours") or "").strip()  # délai avant relance
+        if brut_relance.isdigit() and 1 <= int(brut_relance) <= 90:  # entier raisonnable
+            valeurs["delai_relance_jours"] = int(brut_relance)  # garde la valeur
+        else:  # invalide
+            erreurs.append("Délai de relance : un nombre de jours entre 1 et 90.")  # message
         a1, a2 = valeurs.get("pourcentage_acompte_1"), valeurs.get("pourcentage_acompte_2")  # acomptes
         if isinstance(a1, Decimal) and isinstance(a2, Decimal) and a1 + a2 > 100:  # plus que le total
             erreurs.append("Les deux acomptes dépassent 100 % du total.")  # message
@@ -656,7 +665,7 @@ def reglages():  # affiche et enregistre les réglages
         flash("Réglages enregistrés. Ils s'appliquent aux prochains devis et PDF.", "ok")  # confirmation
         return redirect(url_for("reglages"))  # évite le renvoi du formulaire
     courants = db.reglages(jeton())  # réglages enregistrés
-    valeurs = {cle: (nombre_texte(v) if cle in [c[0] for c in CHAMPS_NOMBRE_REGLAGES] + ["validite_jours"] else (v or "")) for cle, v in courants.items()}  # texte prêt pour les champs
+    valeurs = {cle: (nombre_texte(v) if cle in [c[0] for c in CHAMPS_NOMBRE_REGLAGES] + ["validite_jours", "delai_relance_jours"] else (v or "")) for cle, v in courants.items()}  # texte prêt pour les champs
     return render_template("reglages.html", valeurs=valeurs, erreurs=[])  # affiche le formulaire
 
 

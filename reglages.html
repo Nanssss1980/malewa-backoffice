@@ -52,6 +52,7 @@
       <label>Tarif au kilomètre (CHF)<input name="tarif_km" value="{{ valeurs.get('tarif_km', '') }}" inputmode="decimal"></label>
       <label>Taux de TVA (%)<input name="taux_tva" value="{{ valeurs.get('taux_tva', '') }}" inputmode="decimal"></label>
       <label>Validité du devis (jours)<input name="validite_jours" value="{{ valeurs.get('validite_jours', '') }}" inputmode="numeric"></label>
+      <label>Relancer un devis sans réponse après (jours)<input name="delai_relance_jours" value="{{ valeurs.get('delai_relance_jours', '5') }}" inputmode="numeric"></label>
       <label>Premier acompte (%)<input name="pourcentage_acompte_1" value="{{ valeurs.get('pourcentage_acompte_1', '') }}" inputmode="decimal"></label>
       <label>Deuxième acompte (%)<input name="pourcentage_acompte_2" value="{{ valeurs.get('pourcentage_acompte_2', '') }}" inputmode="decimal"></label>
     </div>

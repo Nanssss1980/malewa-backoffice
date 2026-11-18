@@ -114,6 +114,9 @@ class Donnees:  # regroupe tous les échanges avec la base
     def devis_de_demande(self, jeton, demande_id):  # liste des devis d'une demande, du plus récent au plus ancien
         return self._client(jeton).table("devis").select("id, numero, version, statut, date_emission, total_ttc, total_ht").eq("demande_id", demande_id).order("cree_le", desc=True).execute().data  # lecture
 
+    def devis_envoyes(self, jeton):  # tous les devis au statut « envoyé » (pour les rappels de relance)
+        return self._client(jeton).table("devis").select("demande_id, date_emission").eq("statut", "envoye").execute().data  # lecture
+
     def devis(self, jeton, identifiant):  # un devis complet : lignes, demande et client
         base = self._client(jeton)  # connexion avec les droits de la personne
         reponse = base.table("devis").select("*, demandes(id, titre, lieu, date_evenement, horaire, clients(*))").eq("id", identifiant).execute()  # devis + demande + client

@@ -102,7 +102,7 @@ class Donnees:  # même interface que la version Supabase
     # ------------------------------------------------------------ devis
     def reglages(self, jeton):  # réglages fictifs (gardés en mémoire pour pouvoir les modifier)
         if not hasattr(self, "_reglages"):  # première lecture
-            self._reglages = {"raison_sociale": "Malewa Sàrl", "adresse": "La Claie-aux-Moines 17, 1000 Lausanne 26", "numero_ide": "CHE-209.761.684", "site_web": "https://malewa.ch", "email": "info@malewa.ch", "telephone": "+41 78 603 36 11", "banque": "Banque de démonstration", "adresse_banque": "Rue du Test 1, 1000 Lausanne", "iban": "CH93 0076 2011 6238 5295 7", "signataire_nom": "Nady Nzita-Nanga", "signataire_fonction": "Gérante", "mention_signature": "Malewa Service Traiteur", "tarif_horaire": 35, "tarif_horaire_nuit": 42, "tarif_km": 1.2, "taux_tva": 8.1, "validite_jours": 14, "pourcentage_acompte_1": 10, "pourcentage_acompte_2": 60}  # valeurs par défaut
+            self._reglages = {"raison_sociale": "Malewa Sàrl", "adresse": "La Claie-aux-Moines 17, 1000 Lausanne 26", "numero_ide": "CHE-209.761.684", "site_web": "https://malewa.ch", "email": "info@malewa.ch", "telephone": "+41 78 603 36 11", "banque": "Banque de démonstration", "adresse_banque": "Rue du Test 1, 1000 Lausanne", "iban": "CH93 0076 2011 6238 5295 7", "signataire_nom": "Nady Nzita-Nanga", "signataire_fonction": "Gérante", "mention_signature": "Malewa Service Traiteur", "tarif_horaire": 35, "tarif_horaire_nuit": 42, "tarif_km": 1.2, "taux_tva": 8.1, "validite_jours": 14, "pourcentage_acompte_1": 10, "pourcentage_acompte_2": 60, "delai_relance_jours": 5}  # valeurs par défaut
         return dict(self._reglages)  # copie, pour ne pas modifier par accident
 
     def modifier_reglages(self, jeton, valeurs):  # enregistre les réglages fictifs
@@ -111,6 +111,9 @@ class Donnees:  # même interface que la version Supabase
 
     def devis_de_demande(self, jeton, demande_id):  # devis d'une demande
         return [d for d in self.devis_par_id.values() if d["demande_id"] == demande_id]  # filtre
+
+    def devis_envoyes(self, jeton):  # devis au statut « envoyé » (pour les rappels de relance)
+        return [{"demande_id": d["demande_id"], "date_emission": d.get("date_emission")} for d in self.devis_par_id.values() if d["statut"] == "envoye"]  # filtre
 
     def devis(self, jeton, identifiant):  # un devis avec sa demande
         d = self.devis_par_id.get(identifiant)  # cherche
