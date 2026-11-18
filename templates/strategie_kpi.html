@@ -69,7 +69,7 @@
         <tr class="total"><td>Total</td><td>{{ kpi.cible_totale|chf if kpi.cible_totale else 'Non fixée' }}</td><td>{{ kpi.total.ca_total|chf }}</td><td></td><td>{{ kpi.pourcent_total|pct if kpi.pourcent_total is not none else '' }}</td></tr>
       </tbody>
     </table>
-    <p class="libelle">Les cibles se fixent après le bilan chiffré 2026 (action 2 du plan).</p>
+    <p class="libelle">Cibles 2027 fixées en novembre 2026. À revoir après quelques mois de saisie réelle.</p>
   </section>
   {% if admin %}<div class="actions"><button class="btn" type="submit">Enregistrer les saisies</button></div>{% endif %}
 </form>
